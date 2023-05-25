@@ -13,14 +13,41 @@ cmd="$cmd; mvn --version;"
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
 
 
+
 # Send project directory to AWS instance.
 scp -r -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../res ec2-user@$(cat instance.dns):
 
+
+
+
 # Install project dependencies.
-cmd="cd res; mvn clean install; mvn compile"
+cmd="cd ~ec2-user/res; mvn clean install; mvn compile"
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd 
 
-# Setup web server to start on instance launch.
-cmd="cd res/loadbalancer"
-cmd="$cmd; echo \"mvn exec:java -Dexec.mainClass=\"pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer\"\" | sudo tee -a /etc/rc.local; sudo chmod +x /etc/rc.local"
+
+
+# Setup auto-start web server loadbalancer.service
+cmd="touch loadbalancer.service"
+cmd="$cmd; printf \"[Unit]\n
+ Description=Loadbalancer WebServer\n
+ After=network.target\n\n[Service]\n
+ User=ec2-user\n
+ Type=simple\n
+ WorkingDirectory=/home/ec2-user/res/loadbalancer\n
+ ExecStart=/home/ec2-user/.sdkman/candidates/maven/current/bin/mvn exec:java -Dexec.mainClass=pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer\n
+ SuccessExitStatus=143\n
+ TimeoutStopSec=10\n
+ RemainAfterExit=no\n\n[Install]\n
+ WantedBy=multi-user.target
+\" > loadbalancer.service"
+cmd="$cmd; sudo mv loadbalancer.service /etc/systemd/system/loadbalancer.service"
+
+ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
+
+
+# Enable the loadbalancer.service to auto-start the webserver
+cmd="sudo systemctl enable loadbalancer.service"
+cmd="$cmd; sudo systemctl start loadbalancer.service"
+cmd="$cmd; sudo systemctl status loadbalancer.service"
+
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
