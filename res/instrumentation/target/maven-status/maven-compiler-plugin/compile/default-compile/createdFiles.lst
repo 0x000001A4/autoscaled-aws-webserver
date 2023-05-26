@@ -1,0 +1,13 @@
+pt/ulisboa/tecnico/cnv/javassist/tools/CodeDumper.class
+pt/ulisboa/tecnico/cnv/javassist/tools/PrintMetrics.class
+pt/ulisboa/tecnico/cnv/javassist/tools/AbstractJavassistTool.class
+pt/ulisboa/tecnico/cnv/javassist/tools/ClassAnalyser.class
+pt/ulisboa/tecnico/cnv/javassist/tools/MethodExecutionTimer.class
+pt/ulisboa/tecnico/cnv/javassist/tools/PrintMetrics$Metric.class
+pt/ulisboa/tecnico/cnv/javassist/tools/AbstractJavassistTool$BasicBlock.class
+pt/ulisboa/tecnico/cnv/javassist/tools/BranchStatistics.class
+pt/ulisboa/tecnico/cnv/javassist/tools/BasicBlockCache.class
+pt/ulisboa/tecnico/cnv/javassist/tools/ICount.class
+pt/ulisboa/tecnico/cnv/javassist/tools/MethodAnalyser.class
+pt/ulisboa/tecnico/cnv/javassist/tools/BasicBlockCache$BblLastCall.class
+pt/ulisboa/tecnico/cnv/javassist/JavassistAgent.class

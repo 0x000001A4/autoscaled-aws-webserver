@@ -26,6 +26,12 @@ public class ICount extends CodeDumper {
         super(packageNameList, writeDestination);
     }
 
+    public static void resetStatistics() {
+        nblocks = 0;
+        nmethods = 0;
+        ninsts = 0;
+    }
+
     public static void incBasicBlock(int position, int length) {
         nblocks++;
         ninsts += length;
@@ -39,14 +45,15 @@ public class ICount extends CodeDumper {
         System.out.println(String.format("[%s] Number of executed methods: %s", ICount.class.getSimpleName(), nmethods));
         System.out.println(String.format("[%s] Number of executed basic blocks: %s", ICount.class.getSimpleName(), nblocks));
         System.out.println(String.format("[%s] Number of executed instructions: %s", ICount.class.getSimpleName(), ninsts));
+        resetStatistics();
     }
-
+x
     @Override
     protected void transform(CtBehavior behavior) throws Exception {
         super.transform(behavior);
         behavior.insertAfter(String.format("%s.incBehavior(\"%s\");", ICount.class.getName(), behavior.getLongName()));
 
-        if (behavior.getName().equals("main")) {
+        if (behavior.getName().equals("handle")) {
             behavior.insertAfter(String.format("%s.printStatistics();", ICount.class.getName()));
         }
     }
