@@ -7,6 +7,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.net.URI;
 
+import java.util.Map;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -28,7 +30,7 @@ public class LoadBalancerHandler implements HttpHandler {
             nextInstance = (nextInstance+1) % activeInstances.size();
             
             URI uri = he.getRequestURI();
-            URI _uri = new URI("http://" + instance.getPublicDnsName() + ":" + 8000 + uri.toString());
+            URI _uri = new URI("http://" + instance.getPrivateIpAddress() + ":" + 8000 + uri.toString());
             System.out.println(_uri);
             System.out.println(_uri.getScheme());
             HttpRequest req = HttpRequest.newBuilder(_uri).build();
@@ -54,8 +56,10 @@ public class LoadBalancerHandler implements HttpHandler {
                 he.sendResponseHeaders(204, -1);
                 return;
             }
-            he.getResponseBody().write(forward(he).body());
             he.sendResponseHeaders(200, 0);
+            he.getResponseBody().write(forward(he).body());
+	    he.getResponseBody().flush();
+	    he.getResponseBody().close();
 
         } catch (Exception e) {
             e.printStackTrace();

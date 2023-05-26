@@ -7,7 +7,7 @@ export AWS_DEFAULT_REGION=eu-west-1
 export AWS_ACCOUNT_ID=444227009757
 export AWS_ACCESS_KEY_ID=AKIAWO3P6HTO45JPDUUS
 export AWS_SECRET_ACCESS_KEY=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
-export AWS_EC2_SSH_KEYPAIR_PATH=/home/ricky420/school/cnv/cnv/keypair.pem
+export AWS_EC2_SSH_KEYPAIR_PATH=/home/velhinho/Desktop/cnv/cnv-shared/cnv/keypair.pem
 export AWS_SG_ID=sg-0d889cf737eea3b6c
 export AWS_KEYPAIR_NAME=keypair
 
