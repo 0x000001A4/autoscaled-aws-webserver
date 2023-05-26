@@ -1,5 +1,7 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
+import com.amazonaws.services.ec2.model.Instance;
+
 import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
@@ -21,11 +23,12 @@ public class LoadBalancerHandler implements HttpHandler {
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
         try {
-            String nextWorkerId = Autoscaler.getActiveInstances().keySet().toArray(String[]::new)[nextInstance];
-            nextInstance = (nextInstance+1) % Autoscaler.getActiveInstances().size();
+            Map<String, Instance> activeInstances = Autoscaler.getActiveInstances();
+            Instance instance = activeInstances.values().toArray(Instance[]::new)[nextInstance];
+            nextInstance = (nextInstance+1) % activeInstances.size();
             
             URI uri = he.getRequestURI();
-            URI _uri = new URI("http://" + nextWorkerId + ":" + 8000 + uri.toString());
+            URI _uri = new URI("http://" + instance.getPublicDnsName() + ":" + 8000 + uri.toString());
             System.out.println(_uri);
             System.out.println(_uri.getScheme());
             HttpRequest req = HttpRequest.newBuilder(_uri).build();
