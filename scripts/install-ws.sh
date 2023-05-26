@@ -1,5 +1,4 @@
 #!/bin/bash
-
 source config.sh
 
 # Install java.
@@ -9,7 +8,7 @@ cmd="$cmd; java -version"
 cmd="$cmd; curl -s "https://get.sdkman.io" | bash"
 cmd="$cmd; source '/home/ec2-user/.sdkman/bin/sdkman-init.sh'"
 cmd="$cmd; sdk install maven"
-cmd="$cmd; mvn --version;"
+cmd="$cmd; mvn --version"
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
 
 
@@ -21,33 +20,33 @@ scp -r -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../res ec2-
 
 
 # Install project dependencies.
-cmd="cd ~ec2-user/res; mvn clean install; mvn compile"
+cmd="cd ~ec2-user/res; mvn clean install compile package"
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd 
 
 
 
-# Setup auto-start web server loadbalancer.service
-cmd="touch loadbalancer.service"
+# Setup auto-start web server worker.service
+cmd="touch worker.service"
 cmd="$cmd; printf \"[Unit]\n
- Description=Loadbalancer WebServer\n
+ Description=Worker Server\n
  After=network.target\n\n[Service]\n
  User=ec2-user\n
  Type=simple\n
- WorkingDirectory=/home/ec2-user/res/loadbalancer\n
- ExecStart=/home/ec2-user/.sdkman/candidates/maven/current/bin/mvn exec:java -Dexec.mainClass=pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer\n
+ WorkingDirectory=/home/ec2-user/res\n
+ ExecStart=/usr/bin/java -cp /home/ec2-user/res/webserver/target/webserver-1.0.0-SNAPSHOT-jar-with-dependencies.jar -javaagent:instrumentation/target/JavassistWrapper-1.0-jar-with-dependencies.jar=PrintMetrics:pt.ulisboa.tecnico.cnv:output  pt.ulisboa.tecnico.cnv.webserver.WebServer\n
  SuccessExitStatus=143\n
  TimeoutStopSec=10\n
  RemainAfterExit=no\n\n[Install]\n
  WantedBy=multi-user.target
-\" > loadbalancer.service"
-cmd="$cmd; sudo mv loadbalancer.service /etc/systemd/system/loadbalancer.service"
+\" > worker.service"
+cmd="$cmd; sudo mv worker.service /etc/systemd/system/worker.service"
 
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
 
 
-# Enable the loadbalancer.service to auto-start the webserver
-cmd="sudo systemctl enable loadbalancer.service"
-cmd="$cmd; sudo systemctl start loadbalancer.service"
-cmd="$cmd; sudo systemctl status loadbalancer.service"
+# Enable the worker.service to auto-start the webserver
+cmd="sudo systemctl enable worker.service"
+cmd="$cmd; sudo systemctl start worker.service"
+cmd="$cmd; sudo systemctl status worker.service"
 
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd

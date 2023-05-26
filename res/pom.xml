@@ -18,6 +18,7 @@
 		<module>insect-war</module>
 		<module>webserver</module>
 		<module>loadbalancer</module>
+		<module>instrumentation</module>
 	</modules>
 
 </project>

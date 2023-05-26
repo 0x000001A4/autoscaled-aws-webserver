@@ -6,7 +6,7 @@ source config.sh
 $DIR/launch-vm.sh
 
 # Step 2: install software in the VM instance.
-$DIR/install-vm.sh
+$DIR/install-ws.sh
 
 # Step 3: test VM instance.
 $DIR/test-vm.sh
