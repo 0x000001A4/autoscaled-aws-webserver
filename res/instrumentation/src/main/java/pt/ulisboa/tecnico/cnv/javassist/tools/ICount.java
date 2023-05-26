@@ -47,7 +47,7 @@ public class ICount extends CodeDumper {
         System.out.println(String.format("[%s] Number of executed instructions: %s", ICount.class.getSimpleName(), ninsts));
         resetStatistics();
     }
-x
+    
     @Override
     protected void transform(CtBehavior behavior) throws Exception {
         super.transform(behavior);

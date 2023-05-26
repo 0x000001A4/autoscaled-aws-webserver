@@ -1,17 +1,13 @@
-package pt.ulisboa.tecnico.cnv.insectwar;
+package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URI;
 
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 
 public class LoadBalancerHandler implements HttpHandler {
@@ -23,11 +19,28 @@ public class LoadBalancerHandler implements HttpHandler {
     }
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
-        HttpExchange heForward = he;
-        he.setAttribute(Autoscaler.getActiveInstances().values()[nextInstance])
-        nextInstance = (nextInstance+1) % Autoscaler.getActiveInstances().size();
-        HttpRequest req = HttpRequest.newBuilder(heForward.getRequestURI()).build();
-        client.send(req, BodyHandlers.ofByteArray());
+        try {
+            String nextWorkerId = Autoscaler.getActiveInstances().values().toArray(String[]::new)[nextInstance];
+            nextInstance = (nextInstance+1) % Autoscaler.getActiveInstances().size();
+            
+            URI uri = he.getRequestURI();
+            HttpRequest req = HttpRequest.newBuilder(
+                new URI(uri.getScheme(),
+                  uri.getUserInfo(), 
+                  nextWorkerId, 
+                  uri.getPort(),
+                  uri.getPath(), 
+                  uri.getQuery(),
+                  uri.getFragment())
+            ).build();
+            
+            HttpClient client = HttpClient.newHttpClient();
+            return client.send(req, BodyHandlers.ofByteArray());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -42,8 +55,6 @@ public class LoadBalancerHandler implements HttpHandler {
                 he.sendResponseHeaders(204, -1);
                 return;
             }
-
-            HttpClient client = HttpClient.newHttpClient();
             he.getResponseBody().write(forward(he).body());
             he.sendResponseHeaders(200, 0);
 

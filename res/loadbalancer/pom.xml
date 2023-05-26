@@ -26,6 +26,13 @@
 		  <artifactId>insectwar</artifactId>
 		  <version>1.0.0-SNAPSHOT</version>
 	  </dependency>
+
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-ec2</artifactId>
+      <version>1.12.470</version>
+    </dependency>
+
   </dependencies>
 
   <build>

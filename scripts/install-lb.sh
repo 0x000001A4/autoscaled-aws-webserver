@@ -16,12 +16,13 @@ ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat inst
 
 # Send project directory to AWS instance.
 scp -r -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../res ec2-user@$(cat instance.dns):
-
-
+scp -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../scripts/image.id ec2-user@$(cat instance.dns):
+scp -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../scripts/awsconfig.sh ec2-user@$(cat instance.dns):
 
 
 # Install project dependencies.
-cmd="cd ~ec2-user/res; mvn clean install; mvn compile"
+cmd="source awsconfig.sh; cd ~ec2-user/res; mvn clean install; mvn compile"
+
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd 
 
 
