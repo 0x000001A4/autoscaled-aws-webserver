@@ -32,6 +32,7 @@ cmd="$cmd; printf \"[Unit]\n
  After=network.target\n\n[Service]\n
  User=ec2-user\n
  Type=simple\n
+ EnvironmentFile=/home/ec2-user/awsconfig.sh\n
  WorkingDirectory=/home/ec2-user/res\n
  ExecStart=/usr/bin/java -cp /home/ec2-user/res/webserver/target/webserver-1.0.0-SNAPSHOT-jar-with-dependencies.jar -javaagent:instrumentation/target/JavassistWrapper-1.0-jar-with-dependencies.jar=PrintMetrics:pt.ulisboa.tecnico.cnv:output  pt.ulisboa.tecnico.cnv.webserver.WebServer\n
  SuccessExitStatus=143\n
