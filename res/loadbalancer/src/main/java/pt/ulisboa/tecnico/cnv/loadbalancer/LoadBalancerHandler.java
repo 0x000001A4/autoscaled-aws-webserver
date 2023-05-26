@@ -10,6 +10,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 
+
 public class LoadBalancerHandler implements HttpHandler {
 
     private int nextInstance;
@@ -20,19 +21,14 @@ public class LoadBalancerHandler implements HttpHandler {
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
         try {
-            String nextWorkerId = Autoscaler.getActiveInstances().values().toArray(String[]::new)[nextInstance];
+            String nextWorkerId = Autoscaler.getActiveInstances().keySet().toArray(String[]::new)[nextInstance];
             nextInstance = (nextInstance+1) % Autoscaler.getActiveInstances().size();
             
             URI uri = he.getRequestURI();
-            HttpRequest req = HttpRequest.newBuilder(
-                new URI(uri.getScheme(),
-                  uri.getUserInfo(), 
-                  nextWorkerId, 
-                  uri.getPort(),
-                  uri.getPath(), 
-                  uri.getQuery(),
-                  uri.getFragment())
-            ).build();
+            URI _uri = new URI("http://" + nextWorkerId + ":" + 8000 + uri.toString());
+            System.out.println(_uri);
+            System.out.println(_uri.getScheme());
+            HttpRequest req = HttpRequest.newBuilder(_uri).build();
             
             HttpClient client = HttpClient.newHttpClient();
             return client.send(req, BodyHandlers.ofByteArray());

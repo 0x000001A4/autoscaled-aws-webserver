@@ -47,7 +47,7 @@ ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat inst
 
 
 # Enable the loadbalancer.service to auto-start the webserver
-cmd="sudo systemctl enable loadbalancer.service"
+cmd="source awsconfig.sh; sudo systemctl enable loadbalancer.service"
 cmd="$cmd; sudo systemctl start loadbalancer.service"
 cmd="$cmd; sudo systemctl status loadbalancer.service"
 
