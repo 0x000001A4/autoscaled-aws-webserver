@@ -20,6 +20,8 @@ aws ec2 describe-instances \
 	--instance-id $(cat instance.id) | jq -r ".Reservations[0].Instances[0].NetworkInterfaces[0].PrivateIpAddresses[0].Association.PublicDnsName" > instance.dns
 echo "New instance with id $(cat instance.id) has address $(cat instance.dns)."
 
+sleep 2
+
 # Wait for instance to have SSH ready.
 while ! nc -z $(cat instance.dns) 22; do
 	echo "Waiting for $(cat instance.dns):22 (SSH)..."

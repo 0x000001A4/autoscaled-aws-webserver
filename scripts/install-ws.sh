@@ -1,7 +1,8 @@
 #!/bin/bash
+
 source config.sh
 
-# Install java.
+# Install java and maven.
 cmd="set -v"
 cmd="$cmd; sudo yum update -y; sudo yum install java-11-amazon-corretto.x86_64 -y"
 cmd="$cmd; java -version"

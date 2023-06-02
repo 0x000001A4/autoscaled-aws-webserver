@@ -7,7 +7,7 @@ aws ec2 reboot-instances --instance-ids $(cat instance.id)
 echo "Rebooting instance to test web server auto-start."
 
 # Letting the instance shutdown.
-sleep 1
+sleep 5
 
 # Wait for port 8000 to become available.
 while ! nc -z $(cat instance.dns) 8000; do

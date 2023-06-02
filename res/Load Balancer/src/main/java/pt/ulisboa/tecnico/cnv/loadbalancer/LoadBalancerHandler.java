@@ -58,8 +58,8 @@ public class LoadBalancerHandler implements HttpHandler {
             }
             he.sendResponseHeaders(200, 0);
             he.getResponseBody().write(forward(he).body());
-	    he.getResponseBody().flush();
-	    he.getResponseBody().close();
+            he.getResponseBody().flush();
+            he.getResponseBody().close();
 
         } catch (Exception e) {
             e.printStackTrace();

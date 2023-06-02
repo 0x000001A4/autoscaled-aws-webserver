@@ -43,6 +43,7 @@ cmd="$cmd; printf \"[Unit]\n
  WantedBy=multi-user.target
 \" > loadbalancer.service"
 cmd="$cmd; sudo mv loadbalancer.service /etc/systemd/system/loadbalancer.service"
+cmd="$cmd; sudo chmod 644 /etc/systemd/system/loadbalancer.service"
 
 ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
 
