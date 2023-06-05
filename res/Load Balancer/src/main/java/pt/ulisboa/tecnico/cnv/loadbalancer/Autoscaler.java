@@ -2,8 +2,10 @@ package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
+import com.amazonaws.services.ec2.model.InstanceStateChange;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -25,6 +27,17 @@ public class Autoscaler {
     private static String KEY_NAME = System.getenv("AWS_KEYPAIR_NAME");
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
     private static Map<String, Instance> _activeInstances = new ConcurrentHashMap<String, Instance>();
+    private static Thread metricsThread = new Thread(() -> {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                CloudWatchMetrics.updateWorkerMetrics();
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    });
     
     public static String GET_AMI_ID() {
         try {
@@ -35,8 +48,23 @@ public class Autoscaler {
         }
     }
 
+    public static void init() {
+        launchEC2Instance();
+        metricsThread.start();
+    }
+
+    public static Thread getThread() {
+        return metricsThread;
+    }
+
     public static Map<String, Instance> getActiveInstances() {
         return _activeInstances;
+    }
+
+    public static void terminateAllInstances() {
+        for (String workerId: _activeInstances.keySet()) {
+            terminateEC2instance(workerId);
+        }
     }
 
     public static void launchEC2Instance() {
@@ -66,10 +94,21 @@ public class Autoscaler {
 
     public static void terminateEC2instance(String instanceId) {
         Instance instance = _activeInstances.remove(instanceId);
+        boolean terminated = false;
         try {
-            TerminateInstancesRequest termInstanceReq = new TerminateInstancesRequest();
-            termInstanceReq.withInstanceIds(instanceId);
-            LoadBalancer.ec2.terminateInstances(termInstanceReq);
+            while (!terminated) {
+                TerminateInstancesRequest termInstanceReq = new TerminateInstancesRequest();
+                termInstanceReq.withInstanceIds(instanceId);
+                TerminateInstancesResult res = LoadBalancer.ec2.terminateInstances(termInstanceReq);
+                List<InstanceStateChange> stateChanges = res.getTerminatingInstances();
+                for (InstanceStateChange stChange: stateChanges) {
+                    System.out.println("The ID of the {status: " + stChange.getCurrentState().getName() + 
+                        "} instance is " + stChange.getInstanceId());
+                    if (stChange.getCurrentState().getName().equals(InstanceStateName.Terminated.toString())) {
+                        terminated = true;
+                    }
+                }
+            }
 
         } catch (AmazonServiceException ase) {
             _activeInstances.put(instanceId, instance);

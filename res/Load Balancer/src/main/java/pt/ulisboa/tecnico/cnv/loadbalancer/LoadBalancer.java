@@ -1,6 +1,11 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import java.lang.InterruptedException;
+
 import com.sun.net.httpserver.HttpServer;
 
 import com.amazonaws.services.ec2.AmazonEC2;
@@ -13,6 +18,18 @@ public class LoadBalancer {
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     public static AmazonEC2 ec2;
 
+    public static void cleanShutdown(HttpServer server, ExecutorService threadPool, Thread metricsThread) {
+        server.stop(0);
+        threadPool.shutdown();
+        metricsThread.interrupt();
+        try {
+            threadPool.awaitTermination(15, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            System.out.println("Unexpected behaviour");
+        }
+        Autoscaler.terminateAllInstances();
+    }
+
     public static void main(String[] args) throws Exception {
         ec2 = AmazonEC2ClientBuilder.standard().withRegion(AWS_REGION).withCredentials(new EnvironmentVariableCredentialsProvider()).build();
 
@@ -20,14 +37,20 @@ public class LoadBalancer {
         System.out.println("You have access to " + availabilityZonesResult.getAvailabilityZones().size() + " Availability Zones.");
         System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
         
-        Autoscaler.launchEC2Instance();
+        Autoscaler.init();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
+        ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
+        server.setExecutor(threadPool);
         LoadBalancerHandler loadBalancerHandler = new LoadBalancerHandler();
         server.createContext("/simulate", loadBalancerHandler);
         server.createContext("/compressimage", loadBalancerHandler);
         server.createContext("/insectwar", loadBalancerHandler);
+        
+
+        Runtime.getRuntime().addShutdownHook(
+            new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
+        );
         server.start();
     }
 }

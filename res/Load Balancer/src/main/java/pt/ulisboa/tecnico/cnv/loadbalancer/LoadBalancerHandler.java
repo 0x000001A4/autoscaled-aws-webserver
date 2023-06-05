@@ -14,6 +14,11 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.StringBuilder;
+
 
 public class LoadBalancerHandler implements HttpHandler {
 
@@ -32,8 +37,21 @@ public class LoadBalancerHandler implements HttpHandler {
             URI uri = he.getRequestURI();
             URI _uri = new URI("http://" + instance.getPrivateIpAddress() + ":" + 8000 + uri.toString());
             System.out.println(_uri);
-            System.out.println(_uri.getScheme());
-            HttpRequest req = HttpRequest.newBuilder(_uri).build();
+            System.out.println(_uri.getScheme());   
+
+            InputStream in = he.getRequestBody();
+            StringBuilder body = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                body.append(line);
+            }
+
+            // Now body.toString() contains the body of the HttpExchange
+            HttpRequest req = HttpRequest.newBuilder()
+                .uri(_uri)
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .build();
             
             HttpClient client = HttpClient.newHttpClient();
             return client.send(req, BodyHandlers.ofByteArray());
@@ -46,7 +64,6 @@ public class LoadBalancerHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange he) throws IOException {
-        // Handling CORS
         try {
             he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
