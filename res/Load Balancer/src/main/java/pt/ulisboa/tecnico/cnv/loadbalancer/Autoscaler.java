@@ -6,6 +6,7 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.InstanceStateChange;
+import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -26,11 +27,12 @@ public class Autoscaler {
     private static String AMI_ID = GET_AMI_ID();
     private static String KEY_NAME = System.getenv("AWS_KEYPAIR_NAME");
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
-    private static Map<String, Instance> _activeInstances = new ConcurrentHashMap<String, Instance>();
+    private static Map<String, Instance> activeWorkers = new ConcurrentHashMap<String, Instance>();
     private static Thread metricsThread = new Thread(() -> {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 CloudWatchMetrics.updateWorkerMetrics();
+                updateActiveWorkers();
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -53,16 +55,20 @@ public class Autoscaler {
         metricsThread.start();
     }
 
+    public static void updateActiveWorkers() {
+
+    }
+
     public static Thread getThread() {
         return metricsThread;
     }
 
     public static Map<String, Instance> getActiveInstances() {
-        return _activeInstances;
+        return activeWorkers;
     }
 
     public static void terminateAllInstances() {
-        for (String workerId: _activeInstances.keySet()) {
+        for (String workerId: activeWorkers.keySet()) {
             terminateEC2instance(workerId);
         }
     }
@@ -82,7 +88,7 @@ public class Autoscaler {
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
             System.out.println("You have " + LoadBalancer.ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
-            _activeInstances.put(instance.getInstanceId(), instance);
+            activeWorkers.put(instance.getInstanceId(), instance);
 
         } catch (AmazonServiceException ase) {
                 System.out.println("Caught Exception: " + ase.getMessage());
@@ -93,7 +99,7 @@ public class Autoscaler {
     }
 
     public static void terminateEC2instance(String instanceId) {
-        Instance instance = _activeInstances.remove(instanceId);
+        Instance instance = activeWorkers.remove(instanceId);
         boolean terminated = false;
         try {
             while (!terminated) {
@@ -111,7 +117,7 @@ public class Autoscaler {
             }
 
         } catch (AmazonServiceException ase) {
-            _activeInstances.put(instanceId, instance);
+            activeWorkers.put(instanceId, instance);
             System.out.println("Caught Exception: " + ase.getMessage());
             System.out.println("Reponse Status Code: " + ase.getStatusCode());
             System.out.println("Error Code: " + ase.getErrorCode());

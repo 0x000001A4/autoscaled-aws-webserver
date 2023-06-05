@@ -13,7 +13,7 @@ import com.amazonaws.services.cloudwatch.model.*;
 
 public class CloudWatchMetrics {
 
-    public static Map<String, List<Datapoint>> avgCPUUtilization = new HashMap<String, List<Datapoint>>();
+    public static Map<String, Double> avgCPUUtilization = new HashMap<String, Double>();
 
     public static void updateWorkerMetrics() {
         avgCPUUtilization.clear();
@@ -22,7 +22,7 @@ public class CloudWatchMetrics {
             .map(instanceId -> avgCPUUtilization.put(instanceId, fetchAvgCPUUtilization(instanceId)));
     }
 
-    public static List<Datapoint> fetchAvgCPUUtilization(String instanceId) {
+    public static double fetchAvgCPUUtilization(String instanceId) {
         AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
 
         GetMetricStatisticsRequest request = new GetMetricStatisticsRequest()
@@ -37,7 +37,12 @@ public class CloudWatchMetrics {
             .withPeriod(3600) // period in seconds (3600 seconds = 1 hour)
             .withStatistics(Statistic.Average); // can also use MAX, MIN, SAMPLE_COUNT, SUM
 
-        GetMetricStatisticsResult response = cw.getMetricStatistics(request);
-        return response.getDatapoints();
+        GetMetricStatisticsResult res = cw.getMetricStatistics(request);
+        
+        double totalCPUUtilization = 0.0;
+        for (Datapoint dp : res.getDatapoints()) {
+            totalCPUUtilization += dp.getAverage();
+        }
+        return totalCPUUtilization / res.getDatapoints().size();
     }
 }
