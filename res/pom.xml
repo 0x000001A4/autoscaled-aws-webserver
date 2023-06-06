@@ -1,20 +1,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>pt.ulisboa.tecnico.cnv</groupId>
-	<artifactId>cnv</artifactId>
-	<version>${revision}</version>
-	<packaging>pom</packaging>
+    <groupId>pt.ulisboa.tecnico.cnv</groupId>
+    <artifactId>cnv</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
 
-	<properties>
-		<revision>1.0.0-SNAPSHOT</revision>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>11</maven.compiler.release>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
+    <properties>
+        <revision>1.0.0-SNAPSHOT</revision>
 
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <java.target>11</java.target>
+
+<<<<<<< HEAD
         <user.name>username</user.name>
 	</properties>
 
@@ -31,37 +35,62 @@
 		<module>Load Balancer</module>
 		<module>Web Server</module>
 	</modules>
+=======
+        <user.name>cocozinho</user.name>
+    </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>${exec.mainClass}</mainClass>
-                        </manifest>
-                        <!-- <manifestEntries>
-                            <Built-By>TUA MAE</Built-By>
-                        </manifestEntries> -->
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>assemble-all</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <!-- Modules are subcomponents of the project. 
+        The reactor collects all the available modules to build;
+        sorts the projects into the correct build order;
+        builds the selected projects in order. -->
+    <modules>
+        <module>Foxes and Rabbits</module>
+        <module>Image Compression</module>
+        <module>Insect Wars</module>
+        <module>Load Balancer</module>
+        <module>Web Server</module>
+        <module>instrumentation</module>
+    </modules>
+>>>>>>> 9d1e99aafe70496330b141d2d60b9be627614cc2
+
+    <profiles>
+        <profile>
+            <id>packaging-profile</id>
+            <activation>
+                <property>
+                    <name>packaging</name>
+                    <value>!pom</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>${exec.mainClass}</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>assemble-all</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
