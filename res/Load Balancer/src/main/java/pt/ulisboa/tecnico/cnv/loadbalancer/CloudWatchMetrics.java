@@ -13,7 +13,11 @@ import com.amazonaws.services.cloudwatch.model.*;
 
 public class CloudWatchMetrics {
 
-    public static Map<String, Double> avgCPUUtilization = new HashMap<String, Double>();
+    private static Map<String, Double> avgCPUUtilization = new HashMap<String, Double>();
+
+    public static Map<String, Double> getAverageCPUUtilizationMap() {
+        return avgCPUUtilization;
+    }
 
     public static void updateWorkerMetrics() {
         avgCPUUtilization.clear();

@@ -32,7 +32,7 @@ public class Autoscaler {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 CloudWatchMetrics.updateWorkerMetrics();
-                updateActiveWorkers(CloudWatchMetrics.avgCPUUtilization
+                updateActiveWorkers(CloudWatchMetrics.getAverageCPUUtilizationMap()
                                             .values()
                                             .stream()
                                             .mapToDouble(Double::doubleValue)
@@ -70,14 +70,14 @@ public class Autoscaler {
             launchEC2Instance();
 
         } else if (activeWorkers.size() > 0 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
-            double maxAvgCpuUtilization = CloudWatchMetrics.avgCPUUtilization
+            double maxAvgCpuUtilization = CloudWatchMetrics.getAverageCPUUtilizationMap()
                 .values()
                 .stream()
                 .mapToDouble(Double::doubleValue)
                 .max()
                 .orElse(0.0);
 
-            String instanceId = CloudWatchMetrics.avgCPUUtilization
+            String instanceId = CloudWatchMetrics.getAverageCPUUtilizationMap()
                 .entrySet()
                 .stream()
                 .filter(entry -> Objects.equals(entry.getValue(), maxAvgCpuUtilization))
