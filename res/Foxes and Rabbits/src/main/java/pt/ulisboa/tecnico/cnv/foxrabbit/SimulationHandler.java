@@ -4,17 +4,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.*;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URI;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class SimulationHandler implements HttpHandler, RequestHandler<Map<String, String>, String> {
+
+    public String instrumentThis(int world, int n_scenario, int n_generations) {
+        Ecosystem ecosystem = new Ecosystem(world, n_scenario);
+        int generation = ecosystem.runSimulation(n_generations);
+
+        String response = "";
+        response += "<p>Simulation finish at generation: " + generation + "</p>";
+        response += "<p>Number of rocks: " + ecosystem.countType(Type.ROCK) + "</p>";
+        response += "<p>Number of rabbits: " + ecosystem.countType(Type.RABBIT) + "</p>";
+        response += "<p>Number of foxes: " + ecosystem.countType(Type.FOX) + "</p>";
+        response += ecosystem.getCurrentWorldHtmlTable();
+
+        return response;
+    }
 
     @Override
     public void handle(HttpExchange he) throws IOException {
@@ -36,18 +46,7 @@ public class SimulationHandler implements HttpHandler, RequestHandler<Map<String
         int n_generations = Integer.parseInt(parameters.get("generations"));
         int world = Integer.parseInt(parameters.get("world"));
         int n_scenario = Integer.parseInt(parameters.get("scenario"));
-
-        Ecosystem ecosystem = new Ecosystem(world, n_scenario);
-        int generation = ecosystem.runSimulation(n_generations);
-
-        String response = "";
-        response += "<p>Simulation finish at generation: " + generation + "</p>";
-        response += "<p>Number of rocks: " + ecosystem.countType(Type.ROCK) + "</p>";
-        response += "<p>Number of rabbits: " + ecosystem.countType(Type.RABBIT) + "</p>";
-        response += "<p>Number of foxes: " + ecosystem.countType(Type.FOX) + "</p>";
-        response += ecosystem.getCurrentWorldHtmlTable();
-
-        //System.out.println(response);
+        String response = instrumentThis(world, n_scenario, n_generations);
 
         he.sendResponseHeaders(200, response.toString().length());
         OutputStream os = he.getResponseBody();

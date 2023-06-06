@@ -16,6 +16,11 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class WarSimulationHandler implements HttpHandler, RequestHandler<Map<String, String>, String> {
 
+    public String instrumentThis(int max, int army1, int army2) {
+        InsectWars insect_wars = new InsectWars();
+        return insect_wars.war(max, army1, army2);
+    }
+
     @Override
     public void handle(HttpExchange he) throws IOException {
         // Handling CORS
@@ -36,9 +41,7 @@ public class WarSimulationHandler implements HttpHandler, RequestHandler<Map<Str
         int max = Integer.parseInt(parameters.get("max"));
         int army1 = Integer.parseInt(parameters.get("army1"));
         int army2 = Integer.parseInt(parameters.get("army2"));
-
-        InsectWars insect_wars = new InsectWars();
-        String response = insect_wars.war(max, army1, army2);
+        String response = instrumentThis(max, army1, army2);
 
         he.sendResponseHeaders(200, response.toString().length());
         OutputStream os = he.getResponseBody();

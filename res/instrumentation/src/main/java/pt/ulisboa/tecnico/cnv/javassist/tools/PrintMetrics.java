@@ -1,7 +1,5 @@
 package pt.ulisboa.tecnico.cnv.javassist.tools;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -11,12 +9,21 @@ import javassist.CannotCompileException;
 import javassist.CtBehavior;
 
 public class PrintMetrics extends CodeDumper {
+    
+    public static boolean instrumenting = false;
+
     public static class Metric {
+        // Metric information
+        public String serviceName;
+        public Object[] args;
+        // Metric result
         public long nblocks;
         public long nmethods;
         public long ninsts;
 
-        Metric(long nblocks, long nmethods, long ninsts) {
+        Metric(String serviceName, Object[] args, long nblocks, long nmethods, long ninsts) {
+            this.serviceName = serviceName;
+            this.args = args;
             this.nblocks = nblocks;
             this.nmethods = nmethods;
             this.ninsts = ninsts;
@@ -45,9 +52,22 @@ public class PrintMetrics extends CodeDumper {
         super(packageNameList, writeDestination);
     }
 
+    public static Object[] mapFirstArgToLength(Object[] args) {
+        Object[] newArgs = new Object[args.length];
+        newArgs[0] = ((byte[])args[0]).length;
+        System.arraycopy(args, 1, newArgs, 1, args.length-1);
+        return newArgs;
+    }
+
     public static void printMetrics() {
-        System.out.println("Printing Metrics");
+        System.out.println("--- Printing Metrics ---");
         for (Metric metric : metricsStorage) {
+            System.out.println(String.format("Printing metrics from service: %s  with args: ", metric.serviceName));
+            for (int i = 0; i < metric.args.length; i++) {
+                System.out.print(metric.args[i]);
+                System.out.print(", ");
+            }
+            System.out.println();
             System.out.println(String.format("[%s] Number of executed methods: %s", PrintMetrics.class.getSimpleName(), metric.nmethods));
             System.out.println(String.format("[%s] Number of executed basic blocks: %s", PrintMetrics.class.getSimpleName(), metric.nblocks));
             System.out.println(String.format("[%s] Number of executed instructions: %s", PrintMetrics.class.getSimpleName(), metric.ninsts));
@@ -65,20 +85,27 @@ public class PrintMetrics extends CodeDumper {
         metricsStorage = new ConcurrentLinkedQueue<>();
     }
 
-    public static void addMetric() {
-        System.out.println("Added Metric");
+    public static void addMetric(String serviceName, Object[] args) {
+        System.out.println("------------------------------------------------------");
+        System.out.println(String.format("Added Metric for service: %s  with args:", serviceName));
+        for (int i = 0; i < args.length; i++) {
+            System.out.print(args[i]);
+            System.out.print(", ");
+        }
+        System.out.println("\n------------------------------------------------------");
 
         long id = Thread.currentThread().getId();
         long nblocks = nblocksMap.get(id);
         long nmethods = nmethodsMap.get(id);
         long ninsts = ninstsMap.get(id);
 
-        metricsStorage.add(new Metric(nblocks, nmethods, ninsts));
+        metricsStorage.add(new Metric(serviceName, args, nblocks, nmethods, ninsts));
         resetMetrics();
         if (metricsStorage.size() == STORAGE_MAX) {
             printMetrics();
             resetStorage();
         }
+        instrumenting = false;
     }
 
     public static void incBasicBlock(int position, int length) {
@@ -101,17 +128,37 @@ public class PrintMetrics extends CodeDumper {
 
     @Override
     protected void transform(CtBehavior behavior) throws Exception {
-        super.transform(behavior);
-        behavior.insertAfter(String.format("%s.incBehavior(\"%s\");", PrintMetrics.class.getName(), behavior.getLongName()));
+        if (instrumenting) {
+            super.transform(behavior);
+            behavior.insertAfter(String.format("%s.incBehavior(\"%s\");", PrintMetrics.class.getName(), behavior.getLongName()));
+        }
 
-        if (behavior.getName().equals("handle")) {
-            behavior.insertAfter(String.format("%s.addMetric();", PrintMetrics.class.getName()));
+        if (behavior.getName().equals("instrumentThis")) {
+            switch (behavior.getDeclaringClass().getSimpleName()) {
+                case "BaseCompressingHandler":
+                    instrumenting = true;
+                    behavior.insertAfter(String.format("%s.addMetric(\"%s\", %s.mapFirstArgToLength($args));",
+                        PrintMetrics.class.getName(),
+                        behavior.getDeclaringClass().getSimpleName(),
+                        PrintMetrics.class.getName()
+                    ));
+                    break;
+                default:
+                    instrumenting = true;    
+                    behavior.insertAfter(String.format("%s.addMetric(\"%s\", $args);",
+                        PrintMetrics.class.getName(),
+                        behavior.getDeclaringClass().getSimpleName()
+                    ));
+                    break;
+            }
         }
     }
 
     @Override
     protected void transform(BasicBlock block) throws CannotCompileException {
-        super.transform(block);
-        block.behavior.insertAt(block.line, String.format("%s.incBasicBlock(%s, %s);", PrintMetrics.class.getName(), block.getPosition(), block.getLength()));
+        if (instrumenting) {
+            super.transform(block);
+            block.behavior.insertAt(block.line, String.format("%s.incBasicBlock(%s, %s);", PrintMetrics.class.getName(), block.getPosition(), block.getLength()));
+        }
     }
 }

@@ -6,7 +6,6 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.InstanceStateChange;
-import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -15,6 +14,7 @@ import com.amazonaws.services.ec2.model.Reservation;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +32,13 @@ public class Autoscaler {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 CloudWatchMetrics.updateWorkerMetrics();
-                updateActiveWorkers();
+                updateActiveWorkers(CloudWatchMetrics.avgCPUUtilization
+                                            .values()
+                                            .stream()
+                                            .mapToDouble(Double::doubleValue)
+                                            .average()
+                                            .orElse(0.0)
+                );
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -40,6 +46,10 @@ public class Autoscaler {
             }
         }
     });
+
+    // Policies
+    private static double MIN_AVG_CPU_UTILIZATION = 0.4;
+    private static double MAX_AVG_CPU_UTILIZATION = 0.9;
     
     public static String GET_AMI_ID() {
         try {
@@ -55,8 +65,28 @@ public class Autoscaler {
         metricsThread.start();
     }
 
-    public static void updateActiveWorkers() {
+    public static void updateActiveWorkers(double avgCPUUtilization) {
+        if (avgCPUUtilization > MAX_AVG_CPU_UTILIZATION) {
+            launchEC2Instance();
 
+        } else if (activeWorkers.size() > 0 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
+            double maxAvgCpuUtilization = CloudWatchMetrics.avgCPUUtilization
+                .values()
+                .stream()
+                .mapToDouble(Double::doubleValue)
+                .max()
+                .orElse(0.0);
+
+            String instanceId = CloudWatchMetrics.avgCPUUtilization
+                .entrySet()
+                .stream()
+                .filter(entry -> Objects.equals(entry.getValue(), maxAvgCpuUtilization))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+            
+            if (instanceId != null) terminateEC2instance(instanceId);
+        }
     }
 
     public static Thread getThread() {
