@@ -18,25 +18,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <java.target>11</java.target>
 
-<<<<<<< HEAD
-        <user.name>username</user.name>
-	</properties>
-
-	<!-- Modules are subcomponents of the project. 
-		The reactor collects all the available modules to build;
-		sorts the projects into the correct build order;
-		builds the selected projects in order. -->
-	<modules>
-		<module>Foxes and Rabbits</module>
-		<module>Image Compression</module>
-		<module>Insect Wars</module>
-		<module>instrumentation</module>
-        <module>Dynamo Client</module>
-		<module>Load Balancer</module>
-		<module>Web Server</module>
-	</modules>
-=======
-        <user.name>cocozinho</user.name>
+        <user.name>Eu</user.name>
     </properties>
 
     <!-- Modules are subcomponents of the project. 
@@ -44,26 +26,53 @@
         sorts the projects into the correct build order;
         builds the selected projects in order. -->
     <modules>
+        <module>Dynamo Client</module>
         <module>Foxes and Rabbits</module>
         <module>Image Compression</module>
         <module>Insect Wars</module>
+        <module>instrumentation</module>
         <module>Load Balancer</module>
         <module>Web Server</module>
-        <module>instrumentation</module>
     </modules>
->>>>>>> 9d1e99aafe70496330b141d2d60b9be627614cc2
 
     <profiles>
         <profile>
             <id>packaging-profile</id>
             <activation>
                 <property>
+                    <!-- THIS CHECKING OF THE PACKAGING PROPERTY ONLY WORKS WITH MAVEN 3.9.2+ !!! -->
+                    <!-- If you don't have maven 3.9.2+, it will use the antrun-plugin to disable assembly -->
                     <name>packaging</name>
                     <value>!pom</value>
                 </property>
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <!-- Skip assembly if packaging is pom -->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>setup-variables</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- Very important line, this exports property for others to use!!! -->
+                                    <exportAntProperties>true</exportAntProperties>
+                                    <target>
+                                        <!-- Simply setting the flag 'skipAssembly' to true does the trick :) -->
+                                        <condition property="assembly.skipAssembly" value="true" else="false">
+                                            <equals arg1="${project.packaging}" arg2="pom" />
+                                        </condition>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>

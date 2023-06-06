@@ -21,6 +21,7 @@ public class LoadBalancer {
     private static AmazonEC2 ec2;
 
     public static void cleanShutdown(HttpServer server, ExecutorService threadPool, Thread metricsThread) {
+        System.out.println("Stopping the loadbalancer...");
         server.stop(0);
         threadPool.shutdown();
         metricsThread.interrupt();

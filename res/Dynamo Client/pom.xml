@@ -2,9 +2,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-	    <artifactId>cnv</artifactId>
+        <artifactId>cnv</artifactId>
         <groupId>pt.ulisboa.tecnico.cnv</groupId>
-	    <version>${revision}</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>dynamoclient</artifactId>

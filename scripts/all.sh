@@ -8,15 +8,15 @@ source config.sh
 
 # Paths
 ## Res folder
-RES_DIR="$DIR/../res"
+RES_DIR="${DIR}/../res"
 ## Web Server
-WEBSERVER_DIR="$RES_DIR/Web Server/target"
+WEBSERVER_DIR="${RES_DIR}/Web Server/target"
 WEBSERVER_JAR="webserver-1.0.0-SNAPSHOT-jar-with-dependencies.jar"
 ## Load Balancer
-LOADBALANCER_DIR="$RES_DIR/Load Balancer/target"
+LOADBALANCER_DIR="${RES_DIR}/Load Balancer/target"
 LOADBALANCER_JAR="loadbalancer-1.0.0-SNAPSHOT-jar-with-dependencies.jar"
 ## Javassist
-JAVASSIST_DIR="$RES_DIR/instrumentation/target"
+JAVASSIST_DIR="${RES_DIR}/instrumentation/target"
 JAVASSIST_JAR="JavassistWrapper-1.0-jar-with-dependencies.jar"
 
 
@@ -110,15 +110,18 @@ ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC
 # Step 4: test VM instance.
 ${DIR}/test-vm.sh
 
-
 # Step 5: create VM image (AMI).
-aws ec2 create-image --instance-id $(cat instance.id) --name ${AWS_AMI_NAME} | jq -r .ImageId > image.id
+aws ec2 create-image \
+    --instance-id "$(cat instance.id)" \
+    --name "${AWS_AMI_NAME}" \
+    --query "ImageId" \
+    --output text > "${DIR}/image.id"
 echo "New VM image with id $(cat image.id)."
 
 
 # Step 6: Wait for image to become available.
 echo "Waiting for image to be ready... (this can take a couple of minutes)"
-aws ec2 wait image-available --filters Name=name,Values=${AWS_AMI_NAME}
+aws ec2 wait image-available --image-id $(cat image.id)
 echo "Waiting for image to be ready... done! \o/"
 
 
@@ -143,7 +146,7 @@ cmd="$cmd; rm \"/home/ec2-user/${JAVASSIST_JAR}\""
 scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${LOADBALANCER_DIR}/${LOADBALANCER_JAR}" ec2-user@$(cat instance.dns):
 
 ## Send AMI id to AWS instance, so autoscaler can use it.
-scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${DIR}/../scripts/image.id" ec2-user@$(cat instance.dns):
+scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${DIR}/image.id" ec2-user@$(cat instance.dns):
 
 ## Setup auto-start web server loadbalancer.service
 cmd="$cmd; $(setupService "LoadBalancer" "/usr/bin/java -jar \"${LOADBALANCER_JAR}\"")"

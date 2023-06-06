@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class InsectWars {
 
-	public final static int COLONY_SIZE=5000; // times two for different insects in each army
+    public final static int COLONY_SIZE=5000; // times two for different insects in each army
 
     public static void main(String[] args) {
         if (args.length < 3 ){
@@ -47,7 +47,7 @@ public class InsectWars {
         
         // max iters
         while (!army1.isEmpty() && !army2.isEmpty() && ++i<max) {
-            //	System.out.println("Iteration " + i );
+            // System.out.println("Iteration " + i );
             for (j=0; j < sz1 /10; j++){
                 // Randomly select an insect from each army
                 if (i % 2 == 0) {
