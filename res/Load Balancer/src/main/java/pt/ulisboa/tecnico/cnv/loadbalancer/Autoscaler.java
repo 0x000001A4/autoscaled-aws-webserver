@@ -6,6 +6,7 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.InstanceStateChange;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Instance;
@@ -23,7 +24,7 @@ import java.nio.file.Paths;
 
 public class Autoscaler {
 
-
+    private static AmazonEC2 ec2;
     private static String AMI_ID = GET_AMI_ID();
     private static String KEY_NAME = System.getenv("AWS_KEYPAIR_NAME");
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
@@ -60,7 +61,8 @@ public class Autoscaler {
         }
     }
 
-    public static void init() {
+    public static void init(AmazonEC2 ec2Client) {
+        ec2 = ec2Client;
         launchEC2Instance();
         metricsThread.start();
     }
@@ -114,9 +116,9 @@ public class Autoscaler {
                                 .withKeyName(KEY_NAME)
                                 .withSecurityGroupIds(SEC_GROUP_ID);
             
-            RunInstancesResult runInstancesResult = LoadBalancer.ec2.runInstances(runInstancesRequest);
+            RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
-            System.out.println("You have " + LoadBalancer.ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
+            System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
             activeWorkers.put(instance.getInstanceId(), instance);
 
@@ -135,7 +137,7 @@ public class Autoscaler {
             while (!terminated) {
                 TerminateInstancesRequest termInstanceReq = new TerminateInstancesRequest();
                 termInstanceReq.withInstanceIds(instanceId);
-                TerminateInstancesResult res = LoadBalancer.ec2.terminateInstances(termInstanceReq);
+                TerminateInstancesResult res = ec2.terminateInstances(termInstanceReq);
                 List<InstanceStateChange> stateChanges = res.getTerminatingInstances();
                 for (InstanceStateChange stChange: stateChanges) {
                     System.out.println("The ID of the {status: " + stChange.getCurrentState().getName() + 
@@ -159,7 +161,7 @@ public class Autoscaler {
     public static List<Instance> fetchEC2instances() {
         List<Instance> activeInstances = new ArrayList<Instance>();
         DescribeInstancesRequest request = new DescribeInstancesRequest();
-        DescribeInstancesResult response = LoadBalancer.ec2.describeInstances(request);
+        DescribeInstancesResult response = ec2.describeInstances(request);
         boolean done = false;
 
         while (!done) {

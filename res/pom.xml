@@ -15,7 +15,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 
-        <user.name>cocozinho</user.name>
+        <user.name>username</user.name>
 	</properties>
 
 	<!-- Modules are subcomponents of the project. 
@@ -26,9 +26,10 @@
 		<module>Foxes and Rabbits</module>
 		<module>Image Compression</module>
 		<module>Insect Wars</module>
+		<module>instrumentation</module>
+        <module>Dynamo Client</module>
 		<module>Load Balancer</module>
 		<module>Web Server</module>
-		<module>instrumentation</module>
 	</modules>
 
     <build>

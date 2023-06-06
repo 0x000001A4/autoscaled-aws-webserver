@@ -1,5 +1,6 @@
 package pt.ulisboa.tecnico.cnv.javassist.tools;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,6 +51,14 @@ public class PrintMetrics extends CodeDumper {
 
     public PrintMetrics(List<String> packageNameList, String writeDestination) {
         super(packageNameList, writeDestination);
+    }
+
+    public static List<PrintMetrics.Metric> returnMetrics() {
+        List<PrintMetrics.Metric> metrics = new ArrayList<Metric>();
+        while (metricsStorage.size() > 0) {
+            metrics.add(metricsStorage.poll());
+        }
+        return metrics;
     }
 
     public static Object[] mapFirstArgToLength(Object[] args) {

@@ -57,6 +57,7 @@ public class LoadBalancerHandler implements HttpHandler {
             return client.send(req, BodyHandlers.ofByteArray());
 
         } catch (Exception e) {
+            /* TODO: Forward to some other server in case of failure */
             e.printStackTrace();
             return null;
         }

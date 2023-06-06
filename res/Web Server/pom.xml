@@ -30,6 +30,11 @@
             <artifactId>insectwar</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>dynamoclient</artifactId>
+            <version>${revision}</version>
+        </dependency>
     </dependencies>
 
 </project>
