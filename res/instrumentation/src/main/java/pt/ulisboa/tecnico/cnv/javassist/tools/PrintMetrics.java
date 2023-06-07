@@ -10,7 +10,7 @@ import javassist.CannotCompileException;
 import javassist.CtBehavior;
 
 public class PrintMetrics extends CodeDumper {
-    
+
     public static boolean instrumenting = false;
 
     public static class Metric {
@@ -112,7 +112,6 @@ public class PrintMetrics extends CodeDumper {
         resetMetrics();
         if (metricsStorage.size() == STORAGE_MAX) {
             printMetrics();
-            resetStorage();
         }
         instrumenting = false;
     }
@@ -144,19 +143,12 @@ public class PrintMetrics extends CodeDumper {
 
         if (behavior.getName().equals("instrumentThis")) {
             switch (behavior.getDeclaringClass().getSimpleName()) {
-                case "BaseCompressingHandler":
-                    instrumenting = true;
-                    behavior.insertAfter(String.format("%s.addMetric(\"%s\", %s.mapFirstArgToLength($args));",
-                        PrintMetrics.class.getName(),
-                        behavior.getDeclaringClass().getSimpleName(),
-                        PrintMetrics.class.getName()
-                    ));
-                    break;
                 default:
-                    instrumenting = true;    
+                    instrumenting = true;
+                    String packageName = behavior.getDeclaringClass().getPackageName();
                     behavior.insertAfter(String.format("%s.addMetric(\"%s\", $args);",
                         PrintMetrics.class.getName(),
-                        behavior.getDeclaringClass().getSimpleName()
+                        packageName.substring(packageName.lastIndexOf(".") + 1)
                     ));
                     break;
             }

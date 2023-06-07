@@ -16,6 +16,7 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public class DynamoClient {
     public static void init(AmazonDynamoDB _dynamoDB) {
         dynamoDB = _dynamoDB;
     }
-    
+
     public static void initServiceTables(List<String> serviceNames) {
         try {
             for (String serviceName: serviceNames) {
@@ -44,7 +45,7 @@ public class DynamoClient {
                     .withProvisionedThroughput(new ProvisionedThroughput()
                         .withReadCapacityUnits(1L)
                         .withWriteCapacityUnits(1L));
-                
+
                 // Create table if it does not exist yet
                 TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
                 // wait for the table to move into ACTIVE state
@@ -73,6 +74,7 @@ public class DynamoClient {
     }
 
     public static void updateDBWithInstrumentationMetrics() {
+        System.out.println("updateDB");
         List<PrintMetrics.Metric> metrics = PrintMetrics.returnMetrics();
         for (PrintMetrics.Metric metric: metrics) {
             writeToDynamoDB(metric.serviceName, buildRecord(metric));
@@ -83,20 +85,21 @@ public class DynamoClient {
         Map<String, AttributeValue> record = new HashMap<String, AttributeValue>();
         record.put("id", new AttributeValue(UUID.randomUUID().toString()));
         switch (metric.serviceName) {
-            case "compress-image":
-                record.put("image-size", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("format", new AttributeValue((String)metric.args[2]));
-                record.put("compression-factor", new AttributeValue().withN(Double.toString((float)metric.args[3])));
+            case "compression":
+                record.put("image-size", new AttributeValue().withN(Integer.toString( ((byte[])metric.args[0]).length )));
+                record.put("format", new AttributeValue((String)metric.args[1]));
+                record.put("compression-factor", new AttributeValue()
+                    .withN(String.format(Locale.US, "%.5f", (float)metric.args[2])));
                 break;
-            case "foxes-and-rabbits":
-                record.put("world-size", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("scenario", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
-                record.put("generations", new AttributeValue().withN(Integer.toString((int)metric.args[3])));
-                break;                        
-            case "war-simulation":
-                record.put("max-rounds", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
+            case "foxrabbit":
+                record.put("world-size", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
+                record.put("scenario", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
+                record.put("generations", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
+                break;
+            case "insectwar":
+                record.put("max-rounds", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
                 record.put("army1-size", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("army2-size", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
+                record.put("army2-size", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
                 break;
         }
         record.put("nblocks", new AttributeValue().withN(Long.toString((long)metric.nblocks)));
@@ -106,6 +109,7 @@ public class DynamoClient {
     }
 
     public static void writeToDynamoDB(String tableName, Map<String, AttributeValue> newRecord) {
+        System.out.println("Writing " + tableName + " " + newRecord);
         dynamoDB.putItem(new PutItemRequest(tableName, newRecord));
     }
 

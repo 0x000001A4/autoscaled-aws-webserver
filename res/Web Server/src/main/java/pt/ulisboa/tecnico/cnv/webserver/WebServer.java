@@ -7,14 +7,19 @@ import java.util.concurrent.TimeUnit;
 
 import com.sun.net.httpserver.HttpServer;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 
 public class WebServer {
+    private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
@@ -58,6 +63,14 @@ public class WebServer {
         }
 
         if (!noDynamo) {
+            DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .withRegion(AWS_REGION)
+                .build()
+            );
+            DynamoClient.initServiceTables(new ArrayList<String>(
+                Arrays.asList("compression", "foxrabbit", "insectwar")
+            ));
             Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
@@ -82,7 +95,7 @@ public class WebServer {
             }
         }));
 
-        
+
         server.start();
     }
 }
