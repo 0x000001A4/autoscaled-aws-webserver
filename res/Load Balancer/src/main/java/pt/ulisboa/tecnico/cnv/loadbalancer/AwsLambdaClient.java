@@ -18,6 +18,7 @@ public class AwsLambdaClient {
     public static void init() {
         awsLambdaClient = AWSLambdaClient.builder()
                             .withCredentials(new EnvironmentVariableCredentialsProvider())
+                            .withRegion(System.getenv("AWS_DEFAULT_REGION"))
                             .build();
     }
 
