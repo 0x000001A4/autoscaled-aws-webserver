@@ -49,8 +49,8 @@ public class Autoscaler {
     });
 
     // Policies
-    private static double MIN_AVG_CPU_UTILIZATION = 0.4;
-    private static double MAX_AVG_CPU_UTILIZATION = 0.9;
+    private static double MIN_AVG_CPU_UTILIZATION = 0.25;
+    private static double MAX_AVG_CPU_UTILIZATION = 0.75;
     
     public static String GET_AMI_ID() {
         try {

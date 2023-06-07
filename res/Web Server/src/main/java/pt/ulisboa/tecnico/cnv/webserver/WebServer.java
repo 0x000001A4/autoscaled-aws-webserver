@@ -9,6 +9,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
 
 
@@ -20,7 +21,7 @@ public class WebServer {
     }
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(8001), 0);
         server.setExecutor(threadPool);
 
         SimulationHandler foxesAndRabbitsHandler = new SimulationHandler();
@@ -54,6 +55,7 @@ public class WebServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
+            DynamoClient.changeWebServerStatus(DynamoClient.STATUS_OFF);
             server.stop(0);
             threadPool.shutdown();
             try {

@@ -12,6 +12,8 @@ import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 
@@ -28,16 +30,27 @@ import pt.ulisboa.tecnico.cnv.javassist.tools.PrintMetrics;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class DynamoClient {
 
+    public static Integer STATUS_ON = 1;
+    public static Integer STATUS_OFF = 1;
+
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
+    private static Integer webServerStatus;
 
     public static void init(AmazonDynamoDB _dynamoDB) {
         dynamoDB = _dynamoDB;
+        webServerStatus = STATUS_ON;
+    }
+
+    public static void changeWebServerStatus(Integer newStatus) {
+        webServerStatus = newStatus;
     }
 
     public static void initServiceTables(List<String> serviceNames) {
@@ -122,8 +135,20 @@ public class DynamoClient {
         dynamoDB.putItem(new PutItemRequest(tableName, newRecord));
     }
 
-    public static void queryDynamoDB() {
-
+    public static List<Map<String, AttributeValue>> queryDynamoDB(String tableName) {
+        ScanResult res = dynamoDB.scan(new ScanRequest(tableName));
+        List<Map<String, AttributeValue>> records = res.getItems();
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/ricky420/log-dynamodb"));
+            for (Map<String, AttributeValue> record: records) {
+                writer.append(record.toString()+"\n");
+            }
+            writer.close();
+            return records;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 
@@ -145,7 +170,8 @@ public class DynamoClient {
             Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
-                    task.run();
+                    if (webServerStatus.equals(STATUS_ON)) task.run();
+                    else Thread.currentThread().interrupt();
                     try {
                         TimeUnit.MINUTES.sleep(1);
                     } catch (InterruptedException e) {

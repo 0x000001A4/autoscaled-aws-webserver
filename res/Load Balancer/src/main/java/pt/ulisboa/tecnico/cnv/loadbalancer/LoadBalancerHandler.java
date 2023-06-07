@@ -1,9 +1,14 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.ec2.model.Instance;
 
 import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
+import java.util.List;
+
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
+
 import com.sun.net.httpserver.HttpExchange;
 import java.net.URI;
 
@@ -15,6 +20,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.StringBuilder;
@@ -35,7 +42,7 @@ public class LoadBalancerHandler implements HttpHandler {
             nextInstance = (nextInstance+1) % activeInstances.size();
             
             URI uri = he.getRequestURI();
-            URI _uri = new URI("http://" + instance.getPrivateIpAddress() + ":" + 8000 + uri.toString());
+            URI _uri = new URI("http://" + instance.getPrivateIpAddress() + ":" + 8001 + uri.toString());
             System.out.println(_uri);
             System.out.println(_uri.getScheme());   
 
