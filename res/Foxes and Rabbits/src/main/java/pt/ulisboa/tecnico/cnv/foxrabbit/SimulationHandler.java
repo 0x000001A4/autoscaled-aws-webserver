@@ -71,7 +71,7 @@ public class SimulationHandler implements HttpHandler, RequestHandler<Map<String
         return result;
     }
 
-    private String handleRequest(int generations, int world, int scenario) {
+    private String handleRequest(int world, int scenario, int generations) {
         Ecosystem ecosystem = new Ecosystem(world, scenario);
         int generation = ecosystem.runSimulation(generations);
 
@@ -87,6 +87,6 @@ public class SimulationHandler implements HttpHandler, RequestHandler<Map<String
 
     @Override
     public String handleRequest(Map<String,String> event, Context context) {
-        return handleRequest(Integer.parseInt(event.get("generations")), Integer.parseInt(event.get("world")), Integer.parseInt(event.get("scenario")));
+        return handleRequest(Integer.parseInt(event.get("world")), Integer.parseInt(event.get("scenario")), Integer.parseInt(event.get("generations")));
     }
 }

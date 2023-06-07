@@ -21,7 +21,7 @@ aws lambda create-function \
 	--handler pt.ulisboa.tecnico.cnv.compression.BaseCompressingHandler \
 	--runtime java11 \
 	--timeout 5 \
-	--memory-size 256 \
+	--memory-size 512 \
 	--role arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-role
 
 sleep 5
@@ -32,7 +32,7 @@ aws lambda create-function \
 	--handler pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler \
 	--runtime java11 \
 	--timeout 5 \
-	--memory-size 256 \
+	--memory-size 512 \
 	--role arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-role
 
 sleep 5
@@ -43,5 +43,5 @@ aws lambda create-function \
 	--handler pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler \
 	--runtime java11 \
 	--timeout 5 \
-	--memory-size 256 \
+	--memory-size 512 \
 	--role arn:aws:iam::$AWS_ACCOUNT_ID:role/lambda-role
