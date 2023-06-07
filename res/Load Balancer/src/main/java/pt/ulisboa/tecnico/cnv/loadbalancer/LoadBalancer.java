@@ -40,7 +40,7 @@ public class LoadBalancer {
         DescribeAvailabilityZonesResult availabilityZonesResult = ec2.describeAvailabilityZones();
         System.out.println("You have access to " + availabilityZonesResult.getAvailabilityZones().size() + " Availability Zones.");
         System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
-        
+
         Autoscaler.init(ec2);
         DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
             .withCredentials(new EnvironmentVariableCredentialsProvider())
@@ -48,9 +48,9 @@ public class LoadBalancer {
             .build()
         );
         DynamoClient.initServiceTables(new ArrayList<String>(
-            Arrays.asList("compress-image", "foxes-and-rabbits", "war-simulator")
+            Arrays.asList("compression", "foxrabbit", "insectwar")
         ));
-        
+
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
         server.setExecutor(threadPool);
@@ -58,7 +58,7 @@ public class LoadBalancer {
         server.createContext("/simulate", loadBalancerHandler);
         server.createContext("/compressimage", loadBalancerHandler);
         server.createContext("/insectwar", loadBalancerHandler);
-        
+
 
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
