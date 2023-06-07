@@ -17,6 +17,8 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 
+import javassist.tools.web.Webserver;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,24 +34,21 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class DynamoClient {
 
-    public static Integer STATUS_ON = 1;
-    public static Integer STATUS_OFF = 1;
+    public static enum WebServerStatus {STATUS_ON, STATUS_OFF};
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
-    private static Integer webServerStatus;
+    private static WebServerStatus webServerStatus;
 
     public static void init(AmazonDynamoDB _dynamoDB) {
         dynamoDB = _dynamoDB;
-        webServerStatus = STATUS_ON;
+        webServerStatus = WebServerStatus.STATUS_ON;
     }
 
-    public static void changeWebServerStatus(Integer newStatus) {
+    public static void changeWebServerStatus(WebServerStatus newStatus) {
         webServerStatus = newStatus;
     }
 
@@ -170,7 +169,7 @@ public class DynamoClient {
             Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
-                    if (webServerStatus.equals(STATUS_ON)) task.run();
+                    if (webServerStatus.equals(WebServerStatus.STATUS_ON)) task.run();
                     else Thread.currentThread().interrupt();
                     try {
                         TimeUnit.MINUTES.sleep(1);

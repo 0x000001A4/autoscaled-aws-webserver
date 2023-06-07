@@ -55,7 +55,7 @@ public class WebServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
-            DynamoClient.changeWebServerStatus(DynamoClient.STATUS_OFF);
+            DynamoClient.changeWebServerStatus(DynamoClient.WebServerStatus.STATUS_OFF);
             server.stop(0);
             threadPool.shutdown();
             try {
