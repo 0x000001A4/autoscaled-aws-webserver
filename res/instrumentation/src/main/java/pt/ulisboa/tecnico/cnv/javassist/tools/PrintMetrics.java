@@ -153,6 +153,10 @@ public class PrintMetrics extends CodeDumper {
                     break;
             }
         }
+
+        if (behavior.getName().equals("main") && behavior.getDeclaringClass().getSimpleName().equals("WebServer")) {
+            behavior.insertAfter("pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient.start_dynamo_thread(args, getThreadPool());");
+        }
     }
 
     @Override

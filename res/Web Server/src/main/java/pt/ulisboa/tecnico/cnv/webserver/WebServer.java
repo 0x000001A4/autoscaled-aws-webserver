@@ -6,24 +6,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.sun.net.httpserver.HttpServer;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 
-import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 
 public class WebServer {
-    private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
+    static ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
+
+    public static ExecutorService getThreadPool() {
+        return threadPool;
+    }
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
         server.setExecutor(threadPool);
 
         SimulationHandler foxesAndRabbitsHandler = new SimulationHandler();
@@ -54,35 +51,6 @@ public class WebServer {
             os.close();
         });
 
-        boolean noDynamo = false;
-        for (String arg : args) {
-            if (arg.toLowerCase().contains("nodynamo")) {
-                noDynamo = true;
-                break;
-            }
-        }
-
-        if (!noDynamo) {
-            DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new EnvironmentVariableCredentialsProvider())
-                .withRegion(AWS_REGION)
-                .build()
-            );
-            DynamoClient.initServiceTables(new ArrayList<String>(
-                Arrays.asList("compression", "foxrabbit", "insectwar")
-            ));
-            Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
-            threadPool.execute(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    task.run();
-                    try {
-                        TimeUnit.MINUTES.sleep(1);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            });
-        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
@@ -96,6 +64,6 @@ public class WebServer {
         }));
 
 
-        server.start();
+        threadPool.execute(server::start);
     }
 }

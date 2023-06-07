@@ -20,11 +20,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
 
 import pt.ulisboa.tecnico.cnv.javassist.tools.PrintMetrics;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class DynamoClient {
 
+    private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
 
     public static void init(AmazonDynamoDB _dynamoDB) {
@@ -115,5 +124,38 @@ public class DynamoClient {
 
     public static void queryDynamoDB() {
 
+    }
+
+
+    public static void start_dynamo_thread(String[] args, ExecutorService threadPool) {
+        boolean noDynamo = false;
+        for (String arg : args) {
+            if (arg.toLowerCase().contains("nodynamo")) {
+                noDynamo = true;
+                break;
+            }
+        }
+
+        if (!noDynamo) {
+            DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .withRegion(AWS_REGION)
+                .build()
+            );
+            DynamoClient.initServiceTables(new ArrayList<String>(
+                Arrays.asList("compression", "foxrabbit", "insectwar")
+            ));
+            Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
+            threadPool.execute(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                    task.run();
+                    try {
+                        TimeUnit.MINUTES.sleep(1);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+        }
     }
 }
