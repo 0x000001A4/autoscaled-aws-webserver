@@ -41,6 +41,7 @@ public class LoadBalancer {
         System.out.println("You have access to " + availabilityZonesResult.getAvailabilityZones().size() + " Availability Zones.");
         System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
+        AwsLambdaClient.init();
         Autoscaler.init(ec2);
         DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
             .withCredentials(new EnvironmentVariableCredentialsProvider())
