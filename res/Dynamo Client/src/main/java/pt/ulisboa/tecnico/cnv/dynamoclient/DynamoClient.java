@@ -137,6 +137,11 @@ public class DynamoClient {
         }
 
         if (!noDynamo) {
+            DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .withRegion(AWS_REGION)
+                .build()
+            );
             Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
