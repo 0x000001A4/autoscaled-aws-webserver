@@ -13,14 +13,13 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.Reservation;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class Autoscaler {
 
@@ -28,25 +27,6 @@ public class Autoscaler {
     private static String AMI_ID = GET_AMI_ID();
     private static String KEY_NAME = System.getenv("AWS_KEYPAIR_NAME");
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
-    private static Map<String, Instance> activeWorkers = new ConcurrentHashMap<String, Instance>();
-    private static Thread metricsThread = new Thread(() -> {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                CloudWatchMetrics.updateWorkerMetrics();
-                updateActiveWorkers(CloudWatchMetrics.getAverageCPUUtilizationMap()
-                                            .values()
-                                            .stream()
-                                            .mapToDouble(Double::doubleValue)
-                                            .average()
-                                            .orElse(0.0)
-                );
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-    });
 
     // Policies
     private static double MIN_AVG_CPU_UTILIZATION = 0.25;
@@ -64,43 +44,47 @@ public class Autoscaler {
     public static void init(AmazonEC2 ec2Client) {
         ec2 = ec2Client;
         launchEC2Instance();
-        metricsThread.start();
+        autoscalingThread.start();
     }
+
+    private static Thread autoscalingThread = new Thread(() -> {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                /* Each 15 seconds update the avgCPUUtilization of each worker */
+                CloudWatchMetrics.updateWorkersAvgCPUUtilization();
+                updateActiveWorkers(WorkersOracle.computeAvgWorkersAvgCPUUtilization());
+                Thread.sleep(15000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+    });
 
     public static void updateActiveWorkers(double avgCPUUtilization) {
         if (avgCPUUtilization > MAX_AVG_CPU_UTILIZATION) {
             launchEC2Instance();
 
-        } else if (activeWorkers.size() > 0 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
-            double maxAvgCpuUtilization = CloudWatchMetrics.getAverageCPUUtilizationMap()
-                .values()
-                .stream()
-                .mapToDouble(Double::doubleValue)
-                .max()
-                .orElse(0.0);
-
-            String instanceId = CloudWatchMetrics.getAverageCPUUtilizationMap()
-                .entrySet()
-                .stream()
-                .filter(entry -> Objects.equals(entry.getValue(), maxAvgCpuUtilization))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse(null);
-            
-            if (instanceId != null) terminateEC2instance(instanceId);
+        } else if (WorkersOracle.getWorkers().size() > 0 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
+            double maxAvgCpuUtilization = 0;
+            String id = null;
+            for (Worker worker: WorkersOracle.getWorkers().values()) {
+                double avg = worker.getAvgCPUUtilization();
+                if (avg > maxAvgCpuUtilization) {
+                    maxAvgCpuUtilization = avg;
+                    id = worker.getId();
+                }
+            }
+            if (id != null) terminateEC2instance(id);
         }
     }
 
     public static Thread getThread() {
-        return metricsThread;
-    }
-
-    public static Map<String, Instance> getActiveInstances() {
-        return activeWorkers;
+        return autoscalingThread;
     }
 
     public static void terminateAllInstances() {
-        for (String workerId: activeWorkers.keySet()) {
+        for (String workerId: WorkersOracle.getWorkers().keySet()) {
             terminateEC2instance(workerId);
         }
     }
@@ -120,7 +104,8 @@ public class Autoscaler {
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
             System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
-            activeWorkers.put(instance.getInstanceId(), instance);
+            String workerId = instance.getInstanceId();
+            WorkersOracle.getWorkers().put(workerId, new Worker(workerId, instance));
 
         } catch (AmazonServiceException ase) {
                 System.out.println("Caught Exception: " + ase.getMessage());
@@ -131,7 +116,7 @@ public class Autoscaler {
     }
 
     public static void terminateEC2instance(String instanceId) {
-        Instance instance = activeWorkers.remove(instanceId);
+        Worker worker = WorkersOracle.getWorkers().remove(instanceId);
         boolean terminated = false;
         try {
             while (!terminated) {
@@ -149,7 +134,7 @@ public class Autoscaler {
             }
 
         } catch (AmazonServiceException ase) {
-            activeWorkers.put(instanceId, instance);
+            WorkersOracle.getWorkers().put(instanceId, worker);
             System.out.println("Caught Exception: " + ase.getMessage());
             System.out.println("Reponse Status Code: " + ase.getStatusCode());
             System.out.println("Error Code: " + ase.getErrorCode());

@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.cnv.dynamoclient;
+package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -17,8 +17,6 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 
-import javassist.tools.web.Webserver;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 
 import pt.ulisboa.tecnico.cnv.javassist.tools.PrintMetrics;
+import pt.ulisboa.tecnico.cnv.webserver.WebServer;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
@@ -35,21 +34,14 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
-public class DynamoClient {
 
-    public static enum WebServerStatus {STATUS_ON, STATUS_OFF};
+public class DynamoClient {
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
-    private static WebServerStatus webServerStatus;
 
     public static void init(AmazonDynamoDB _dynamoDB) {
         dynamoDB = _dynamoDB;
-        webServerStatus = WebServerStatus.STATUS_ON;
-    }
-
-    public static void changeWebServerStatus(WebServerStatus newStatus) {
-        webServerStatus = newStatus;
     }
 
     public static void initServiceTables(List<String> serviceNames) {
@@ -138,7 +130,7 @@ public class DynamoClient {
         ScanResult res = dynamoDB.scan(new ScanRequest(tableName));
         List<Map<String, AttributeValue>> records = res.getItems();
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/ricky420/log-dynamodb"));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("/home/ec2-user/log-dynamodb"));
             for (Map<String, AttributeValue> record: records) {
                 writer.append(record.toString()+"\n");
             }
@@ -150,7 +142,6 @@ public class DynamoClient {
         }
     }
 
-
     public static void start_dynamo_thread(String[] args, ExecutorService threadPool) {
         boolean noDynamo = false;
         for (String arg : args) {
@@ -161,15 +152,22 @@ public class DynamoClient {
         }
 
         if (!noDynamo) {
+
             DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(new EnvironmentVariableCredentialsProvider())
                 .withRegion(AWS_REGION)
                 .build()
             );
-            Runnable task = DynamoClient::updateDBWithInstrumentationMetrics;
+
+            Runnable updateDBTask = DynamoClient::updateDBWithInstrumentationMetrics;
+            Runnable queryDBTask = WorkersOracle::updateLBWithInstrumentationMetrics;
+
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
-                    if (webServerStatus.equals(WebServerStatus.STATUS_ON)) task.run();
+                    if (WebServer.getStatus().equals(WebServer.WebServerStatus.STATUS_ON)) {
+                        updateDBTask.run();
+                        queryDBTask.run();
+                    }
                     else Thread.currentThread().interrupt();
                     try {
                         TimeUnit.MINUTES.sleep(1);

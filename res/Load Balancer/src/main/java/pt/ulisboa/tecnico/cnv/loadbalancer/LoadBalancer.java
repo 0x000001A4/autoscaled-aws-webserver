@@ -13,18 +13,16 @@ import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 
-import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
-
 public class LoadBalancer {
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonEC2 ec2;
 
-    public static void cleanShutdown(HttpServer server, ExecutorService threadPool, Thread metricsThread) {
+    public static void cleanShutdown(HttpServer server, ExecutorService threadPool, Thread autoscalingThread) {
         System.out.println("Stopping the loadbalancer...");
         server.stop(0);
         threadPool.shutdown();
-        metricsThread.interrupt();
+        autoscalingThread.interrupt();
         try {
             threadPool.awaitTermination(15, TimeUnit.MINUTES);
         } catch (Exception e) {

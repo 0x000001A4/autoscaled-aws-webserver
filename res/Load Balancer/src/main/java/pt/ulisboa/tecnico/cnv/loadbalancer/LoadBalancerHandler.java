@@ -1,18 +1,14 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.ec2.model.Instance;
 
 import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
-import java.util.List;
 
-import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
+import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimator;
 
 import com.sun.net.httpserver.HttpExchange;
 import java.net.URI;
-
-import java.util.Map;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -20,48 +16,42 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpRequest;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.StringBuilder;
 
 
 public class LoadBalancerHandler implements HttpHandler {
 
-    private int nextInstance;
-
-    public LoadBalancerHandler() {
-        nextInstance = 0;
+    private URI getForwardRequestURI(URI reqURI, String body) {
+        try {
+            Instance instance = WorkersOracle.findBestInstanceToHandleRequest(
+                ComplexityEstimator.estimateRequestComplexity(reqURI, body)
+            );
+            return new URI("http://" + instance.getPrivateIpAddress() + ":" + 8001 + reqURI.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
-        try {
-            Map<String, Instance> activeInstances = Autoscaler.getActiveInstances();
-            Instance instance = activeInstances.values().toArray(Instance[]::new)[nextInstance];
-            nextInstance = (nextInstance+1) % activeInstances.size();
-            
-            URI uri = he.getRequestURI();
-            URI _uri = new URI("http://" + instance.getPrivateIpAddress() + ":" + 8001 + uri.toString());
-            System.out.println(_uri);
-            System.out.println(_uri.getScheme());   
-
-            InputStream in = he.getRequestBody();
+        try {       
+            // Read request body     
             StringBuilder body = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(he.getRequestBody()));
             String line;
             while ((line = reader.readLine()) != null) {
                 body.append(line);
             }
 
-            // Now body.toString() contains the body of the HttpExchange
-            HttpRequest req = HttpRequest.newBuilder()
-                .uri(_uri)
+            // Build new request
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(getForwardRequestURI(he.getRequestURI(), body.toString()))
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
             
-            HttpClient client = HttpClient.newHttpClient();
-            return client.send(req, BodyHandlers.ofByteArray());
+            // Forward request (Send the new request)
+            return HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
 
         } catch (Exception e) {
             /* TODO: Forward to some other server in case of failure */

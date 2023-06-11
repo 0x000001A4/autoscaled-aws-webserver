@@ -10,20 +10,14 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.*;
 
+import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class CloudWatchMetrics {
 
-    private static Map<String, Double> avgCPUUtilization = new HashMap<String, Double>();
-
-    public static Map<String, Double> getAverageCPUUtilizationMap() {
-        return avgCPUUtilization;
-    }
-
-    public static void updateWorkerMetrics() {
-        avgCPUUtilization.clear();
-        Autoscaler.getActiveInstances().keySet()
-            .stream()
-            .map(instanceId -> avgCPUUtilization.put(instanceId, fetchAvgCPUUtilization(instanceId)));
+    public static void updateWorkersAvgCPUUtilization() {
+        for (Worker worker: WorkersOracle.getWorkers().values()) {
+            worker.setAvgCPUUtilization(fetchAvgCPUUtilization(worker.getId()));
+        }
     }
 
     public static double fetchAvgCPUUtilization(String instanceId) {
@@ -36,10 +30,10 @@ public class CloudWatchMetrics {
                         .withName("InstanceId")
                         .withValue(instanceId)
                         )
-            .withStartTime(new Date(System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1))) // setting start time to 1 hour ago
-            .withEndTime(new Date()) // current time
-            .withPeriod(3600) // period in seconds (3600 seconds = 1 hour)
-            .withStatistics(Statistic.Average); // can also use MAX, MIN, SAMPLE_COUNT, SUM
+            .withStartTime(new Date(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(20)))
+            .withEndTime(new Date())
+            .withPeriod(20) 
+            .withStatistics(Statistic.Average);
 
         GetMetricStatisticsResult res = cw.getMetricStatistics(request);
         

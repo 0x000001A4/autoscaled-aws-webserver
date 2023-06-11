@@ -31,9 +31,9 @@
             <version>${revision}</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>dynamoclient</artifactId>
-            <version>${revision}</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ec2</artifactId>
+            <version>1.12.470</version>
         </dependency>
     </dependencies>
 

@@ -9,15 +9,20 @@ import com.sun.net.httpserver.HttpServer;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
-import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
 
 
 public class WebServer {
-    static ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
+    private static ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
+    public static enum WebServerStatus {STATUS_ON, STATUS_OFF};
+    private static WebServerStatus status = WebServerStatus.STATUS_OFF;
 
     public static ExecutorService getThreadPool() {
         return threadPool;
+    }
+    
+    public static WebServerStatus getStatus() {
+        return status;
     }
 
     public static void main(String[] args) throws Exception {
@@ -55,7 +60,7 @@ public class WebServer {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
-            DynamoClient.changeWebServerStatus(DynamoClient.WebServerStatus.STATUS_OFF);
+            status = WebServerStatus.STATUS_OFF;
             server.stop(0);
             threadPool.shutdown();
             try {
@@ -65,7 +70,7 @@ public class WebServer {
             }
         }));
 
-
+        status = WebServerStatus.STATUS_ON;
         threadPool.execute(server::start);
     }
 }
