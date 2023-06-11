@@ -1,9 +1,6 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;

@@ -17,9 +17,17 @@ public class LoadBalancer {
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonEC2 ec2;
+    public static enum LoadBalancerStatus {STATUS_ON, STATUS_OFF};
+    private static LoadBalancerStatus status;
+    public static Object queueLock;
+
+    public static LoadBalancerStatus getStatus() {
+        return status;
+    }
 
     public static void cleanShutdown(HttpServer server, ExecutorService threadPool, Thread autoscalingThread) {
         System.out.println("Stopping the loadbalancer...");
+        LoadBalancer.status = LoadBalancerStatus.STATUS_OFF;
         server.stop(0);
         threadPool.shutdown();
         autoscalingThread.interrupt();
@@ -49,7 +57,7 @@ public class LoadBalancer {
         DynamoClient.initServiceTables(new ArrayList<String>(
             Arrays.asList("compression", "foxrabbit", "insectwar")
         ));
-
+        
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
         server.setExecutor(threadPool);
@@ -57,8 +65,9 @@ public class LoadBalancer {
         server.createContext("/simulate", loadBalancerHandler);
         server.createContext("/compressimage", loadBalancerHandler);
         server.createContext("/insectwar", loadBalancerHandler);
-
-
+        
+        WorkersOracle.init(threadPool);
+        
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
         );

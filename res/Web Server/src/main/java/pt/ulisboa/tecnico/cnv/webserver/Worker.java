@@ -2,10 +2,10 @@ package pt.ulisboa.tecnico.cnv.webserver;
 
 import com.amazonaws.services.ec2.model.Instance;
 
-public class Worker {
+public class Worker implements Comparable<Worker> {
     
     private String id;
-    private Double instructionsToComplete;
+    private Double load;
     private Double avgCPUUtilization;
     private Instance ec2Instance;
 
@@ -13,7 +13,12 @@ public class Worker {
         this.id = id;
         this.ec2Instance = ec2Instance;
         this.avgCPUUtilization = 0.0;
-        this.instructionsToComplete = 0.0;
+        this.load = 0.0;
+    }
+
+    @Override
+    public int compareTo(Worker other) {
+        return Double.compare(other.getLoad(), this.getLoad());
     }
 
     public Instance getEC2Instance() {
@@ -28,16 +33,21 @@ public class Worker {
         return id;
     }
 
-    public void setInstructionsToComplete(Double instrToEnd) {
-        instructionsToComplete = instrToEnd;
+    synchronized public void loadWork(Double instrs) {
+        load += instrs;
     }
+
+    synchronized public void unloadWork(Double instrs) {
+        load -= instrs;
+    }
+
 
     public void setAvgCPUUtilization(Double avg) {
         avgCPUUtilization = avg;
     }
 
-    public Double getInstructionsToComplete() {
-        return instructionsToComplete;
+    public Double getLoad() {
+        return load;
     }
 
     public Double getAvgCPUUtilization() {

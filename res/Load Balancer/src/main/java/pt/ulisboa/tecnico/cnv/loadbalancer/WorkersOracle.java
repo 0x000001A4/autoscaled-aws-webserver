@@ -1,11 +1,12 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.ec2.model.Instance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,11 +20,44 @@ public class WorkersOracle {
     
     private static Map<String, Worker> workers = new ConcurrentHashMap<String, Worker>();
     private static String[] workerServiceNames = {"compression", "insectwar"};
+    private static Runnable queryDBTask = WorkersOracle::updateLBWithInstrumentationMetrics;
+    private static PriorityQueue<Worker> workersQueue = new PriorityQueue<Worker>();
 
     public static Map<String, Worker> getWorkers() {
         return workers;
     }
 
+    public static void addWorker(Worker newWorker) {
+        synchronized (LoadBalancer.queueLock) {
+            workers.put(newWorker.getId(), newWorker);
+            workersQueue.add(newWorker);
+        }
+    }
+
+    public static Worker removeWorker(String workerId) {
+        synchronized (LoadBalancer.queueLock) {
+            Worker worker = workers.get(workerId);
+            workersQueue.remove(worker);
+            workers.remove(workerId);
+            return worker;
+        }
+    }
+
+    public static void init(ExecutorService threadPool) {
+        threadPool.execute(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                if (LoadBalancer.getStatus().equals(LoadBalancer.LoadBalancerStatus.STATUS_ON)) {
+                    queryDBTask.run();
+                }
+                else Thread.currentThread().interrupt();
+                try {
+                    TimeUnit.SECONDS.sleep(40);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+    }
 
     public static void updateLBWithInstrumentationMetrics() {
         for (String serviceName: workerServiceNames) {
@@ -56,16 +90,6 @@ public class WorkersOracle {
         }
     }
 
-    public static Double queryWorkerProgress(String instanceId) {
-        return 1.0; // TODO
-    }
-
-    public static void updateWorkersProgress() {
-        for (Worker worker: workers.values()) {
-            worker.setInstructionsToComplete(queryWorkerProgress(worker.getId()));
-        }
-    }
-
     public static Double computeAvgWorkersAvgCPUUtilization() {
         return workers.values()
                 .stream()
@@ -79,15 +103,9 @@ public class WorkersOracle {
         return workers.get(instanceId).getAvgCPUUtilization() < 0.75;
     }
 
-    public static Instance findBestInstanceToHandleRequest(Double complexity) {
-        /* Filter instances for enough CPU to handle the request */
-        List<String> instances = workers.keySet()
-            .stream()
-            .filter(id -> CPUFilter(id, complexity))
-            .collect(Collectors.toList());
-        
-        
-
-        return null;
+    public static Worker findBestWorkerToHandleRequest(Double complexity) {
+        synchronized(LoadBalancer.queueLock) {
+            return workersQueue.poll();
+        }
     }
 }

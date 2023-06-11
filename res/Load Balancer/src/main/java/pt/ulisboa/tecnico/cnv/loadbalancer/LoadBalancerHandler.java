@@ -1,7 +1,5 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
-import com.amazonaws.services.ec2.model.Instance;
-
 import java.io.IOException;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -19,39 +17,37 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.StringBuilder;
 
+import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class LoadBalancerHandler implements HttpHandler {
-
-    private URI getForwardRequestURI(URI reqURI, String body) {
-        try {
-            Instance instance = WorkersOracle.findBestInstanceToHandleRequest(
-                ComplexityEstimator.estimateRequestComplexity(reqURI, body)
-            );
-            return new URI("http://" + instance.getPrivateIpAddress() + ":" + 8001 + reqURI.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
         try {       
             // Read request body     
-            StringBuilder body = new StringBuilder();
+            StringBuilder bodyBuilder = new StringBuilder();
             BufferedReader reader = new BufferedReader(new InputStreamReader(he.getRequestBody()));
             String line;
             while ((line = reader.readLine()) != null) {
-                body.append(line);
+                bodyBuilder.append(line);
             }
+            String body = bodyBuilder.toString();
+            URI reqURI = he.getRequestURI();
 
+            Double complexity = ComplexityEstimator.estimateRequestComplexity(reqURI, body);
+            Worker worker = WorkersOracle.findBestWorkerToHandleRequest(complexity);
+            URI newURI = new URI("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + reqURI.toString());
             // Build new request
             HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(getForwardRequestURI(he.getRequestURI(), body.toString()))
-                .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .uri(newURI)
+                .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
             
             // Forward request (Send the new request)
-            return HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+
+            worker.loadWork(complexity);
+            HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+            worker.unloadWork(complexity);
+            return res;
 
         } catch (Exception e) {
             /* TODO: Forward to some other server in case of failure */

@@ -152,7 +152,6 @@ public class DynamoClient {
         }
 
         if (!noDynamo) {
-
             DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(new EnvironmentVariableCredentialsProvider())
                 .withRegion(AWS_REGION)
@@ -160,13 +159,11 @@ public class DynamoClient {
             );
 
             Runnable updateDBTask = DynamoClient::updateDBWithInstrumentationMetrics;
-            Runnable queryDBTask = WorkersOracle::updateLBWithInstrumentationMetrics;
 
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
                     if (WebServer.getStatus().equals(WebServer.WebServerStatus.STATUS_ON)) {
                         updateDBTask.run();
-                        queryDBTask.run();
                     }
                     else Thread.currentThread().interrupt();
                     try {

@@ -105,7 +105,7 @@ public class Autoscaler {
             System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
             String workerId = instance.getInstanceId();
-            WorkersOracle.getWorkers().put(workerId, new Worker(workerId, instance));
+            WorkersOracle.addWorker(new Worker(workerId, instance));
 
         } catch (AmazonServiceException ase) {
                 System.out.println("Caught Exception: " + ase.getMessage());
@@ -116,7 +116,7 @@ public class Autoscaler {
     }
 
     public static void terminateEC2instance(String instanceId) {
-        Worker worker = WorkersOracle.getWorkers().remove(instanceId);
+        Worker worker = WorkersOracle.removeWorker(instanceId);
         boolean terminated = false;
         try {
             while (!terminated) {
@@ -134,7 +134,7 @@ public class Autoscaler {
             }
 
         } catch (AmazonServiceException ase) {
-            WorkersOracle.getWorkers().put(instanceId, worker);
+            WorkersOracle.addWorker(worker);
             System.out.println("Caught Exception: " + ase.getMessage());
             System.out.println("Reponse Status Code: " + ase.getStatusCode());
             System.out.println("Error Code: " + ase.getErrorCode());
