@@ -19,7 +19,7 @@ public class LoadBalancer {
     private static AmazonEC2 ec2;
     public static enum LoadBalancerStatus {STATUS_ON, STATUS_OFF};
     private static LoadBalancerStatus status;
-    public static Object queueLock;
+    public static Object queueLock = new Object();
 
     public static LoadBalancerStatus getStatus() {
         return status;
