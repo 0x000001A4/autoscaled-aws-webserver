@@ -104,14 +104,14 @@ public class DynamoClient {
         Map<String, AttributeValue> record = new HashMap<String, AttributeValue>();
         record.put("id", new AttributeValue(UUID.randomUUID().toString()));
         switch (metric.serviceName) {
-            case "compressimage":
+            case "compression":
                 record.put("image-size", new AttributeValue().withN(Integer.toString(((byte[])metric.args[0]).length)));
                 record.put("format", new AttributeValue((String)metric.args[1]));
                 record.put("compression-factor", new AttributeValue()
                     .withN(String.format(Locale.US, "%.5f", (float)metric.args[2])));
                 break;
             case "foxrabbit":
-                record.put("world-size", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
+                record.put("world", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
                 record.put("scenario", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
                 record.put("generations", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
                 break;

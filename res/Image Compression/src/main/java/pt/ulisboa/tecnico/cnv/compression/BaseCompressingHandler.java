@@ -47,6 +47,7 @@ public abstract class BaseCompressingHandler implements HttpHandler, RequestHand
             InputStream stream = t.getRequestBody();
             // Result syntax: targetFormat:<targetFormat>;compressionFactor:<factor>;data:image/<currentFormat>;base64,<encoded image>
             String result = new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining("\n"));
+            System.out.println("RESULT: " + result);
             String[] resultSplits = result.split(",");
             String targetFormat = resultSplits[0].split(":")[1].split(";")[0];
             String compressionFactor = resultSplits[0].split(":")[2].split(";")[0];

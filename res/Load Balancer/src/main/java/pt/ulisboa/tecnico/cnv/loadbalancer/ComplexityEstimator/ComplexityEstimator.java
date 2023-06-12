@@ -27,7 +27,7 @@ public class ComplexityEstimator {
                 String value = kvPair[1].trim();
                 switch (key) {
                     case "targetFormat":
-                        features.put("target-format", value);
+                        //features.put("target-format", value);
                         break;
                     case "compressionFactor":
                         features.put("compression-factor", value);
@@ -58,6 +58,7 @@ public class ComplexityEstimator {
             }
         } catch (Exception e) {
             System.out.println("Failed to estimate complexity. Falling into round robin");
+            e.printStackTrace();
             return 0.0;
         }
     }

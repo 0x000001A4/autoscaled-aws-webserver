@@ -50,10 +50,10 @@ public class Autoscaler {
     private static Thread autoscalingThread = new Thread(() -> {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                /* Each 15 seconds update the avgCPUUtilization of each worker */
+                /* Each 60 seconds update the avgCPUUtilization of each worker */
                 CloudWatchMetrics.updateWorkersAvgCPUUtilization();
                 updateActiveWorkers(WorkersOracle.computeAvgWorkersAvgCPUUtilization());
-                Thread.sleep(15000);
+                Thread.sleep(60000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

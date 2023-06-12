@@ -20,6 +20,7 @@ public class CompressImageHandlerImpl extends BaseCompressingHandler implements 
 
     @Override
     byte[] process(BufferedImage bi, String targetFormat, float compressionQuality) throws IOException {
+        System.out.println("COMPRESS: Processing format=" + targetFormat + " and quality = " + compressionQuality);
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -52,6 +53,7 @@ public class CompressImageHandlerImpl extends BaseCompressingHandler implements 
 
             return result;
         } catch (IOException e) {
+            e.printStackTrace();
             throw e;
         }
     }
@@ -92,6 +94,8 @@ public class CompressImageHandlerImpl extends BaseCompressingHandler implements 
 
         File inputFile = new File(inputFilename);
         BufferedImage bi = ImageIO.read(inputFile);
+
+        System.out.println("filename: " + inputFilename + ", format: " + targetFormat + ", compression: " + compressionQuality + ", outputFile: " + outputFile);
 
         byte[] resultImage = new CompressImageHandlerImpl().process(bi, targetFormat, compressionQuality);
 

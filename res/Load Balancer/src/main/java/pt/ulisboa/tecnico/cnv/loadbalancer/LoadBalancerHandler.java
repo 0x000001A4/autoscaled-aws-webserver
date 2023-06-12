@@ -35,19 +35,25 @@ public class LoadBalancerHandler implements HttpHandler {
             String body = bodyBuilder.toString();
             URI reqURI = he.getRequestURI();
 
+            System.out.println("Got request " + reqURI + " with body : ...");
+
             Double complexity = ComplexityEstimator.estimateRequestComplexity(reqURI, body);
+            System.out.println("Estimated complexity: " + complexity);
             Worker worker = complexity.equals(0.0) ? WorkersOracle.roundRobin(prevWorker) : WorkersOracle.getTopWorker();
             prevWorker = worker;
             System.out.println(worker.toString());
             URI newURI = new URI("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + reqURI.toString());
+
+            System.out.println("Forwarding request to " + newURI);
+
             // Build new request
             HttpRequest httpRequest = HttpRequest.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .uri(newURI)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
-            
-            // Forward request (Send the new request)
 
+            // Forward request (Send the new request)
             worker.loadWork(complexity);
             HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
             worker.unloadWork(complexity);

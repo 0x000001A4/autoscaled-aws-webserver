@@ -142,16 +142,12 @@ public class PrintMetrics extends CodeDumper {
         }
 
         if (behavior.getName().equals("instrumentThis")) {
-            switch (behavior.getDeclaringClass().getSimpleName()) {
-                default:
-                    instrumenting = true;
-                    String packageName = behavior.getDeclaringClass().getPackageName();
-                    behavior.insertAfter(String.format("%s.addMetric(\"%s\", $args);",
-                        PrintMetrics.class.getName(),
-                        packageName.substring(packageName.lastIndexOf(".") + 1)
-                    ));
-                    break;
-            }
+            instrumenting = true;
+            String packageName = behavior.getDeclaringClass().getPackageName();
+            behavior.insertAfter(String.format("%s.addMetric(\"%s\", $args);",
+                PrintMetrics.class.getName(),
+                packageName.substring(packageName.lastIndexOf(".") + 1)
+            ));
         }
 
         if (behavior.getName().equals("main") && behavior.getDeclaringClass().getSimpleName().equals("WebServer")) {
