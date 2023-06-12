@@ -15,11 +15,12 @@ import java.util.List;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ImageCompressionCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.InsectWarsCE;
 import pt.ulisboa.tecnico.cnv.webserver.Worker;
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 
 public class WorkersOracle {
     
     private static Map<String, Worker> workers = new ConcurrentHashMap<String, Worker>();
-    private static String[] workerServiceNames = {"compression", "insectwar"};
+    private static String[] workerServiceNames = {"compressimage", "insectwar"};
     private static Runnable queryDBTask = WorkersOracle::updateLBWithInstrumentationMetrics;
     private static PriorityQueue<Worker> workersQueue = new PriorityQueue<Worker>();
 
@@ -65,7 +66,7 @@ public class WorkersOracle {
             List<Double> complexities = new ArrayList<Double>();
             List<List<Double>> features = new ArrayList<List<Double>>();
             switch (serviceName) {
-                case "compression":
+                case "compressimage":
                     for (Map<String, AttributeValue> record: metrics) {
                         features.add(Arrays.asList(
                             Double.parseDouble(record.get("image-size").getN()),
@@ -103,9 +104,14 @@ public class WorkersOracle {
         return workers.get(instanceId).getAvgCPUUtilization() < 0.75;
     }
 
-    public static Worker findBestWorkerToHandleRequest(Double complexity) {
-        synchronized(LoadBalancer.queueLock) {
+    public static Worker getTopWorker() {
+        synchronized (LoadBalancer.queueLock) {
             return workersQueue.poll();
         }
+    }
+
+    public static Worker roundRobin(Worker prevWorker) {
+        List<Worker> _workers = new ArrayList<>(workers.values());
+        return _workers.get((_workers.indexOf(prevWorker)+1) % _workers.size());
     }
 }

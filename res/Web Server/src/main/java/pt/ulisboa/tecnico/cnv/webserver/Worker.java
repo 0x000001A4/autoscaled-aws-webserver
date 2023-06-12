@@ -53,4 +53,10 @@ public class Worker implements Comparable<Worker> {
     public Double getAvgCPUUtilization() {
         return avgCPUUtilization;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Worker: %s  has Load: %s  and  AverageCPUUtilization: %s  and Instance is: %s",
+            this.id, this.load, this.avgCPUUtilization, this.ec2Instance.toString());
+    }
 }

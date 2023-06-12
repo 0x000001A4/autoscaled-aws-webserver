@@ -44,16 +44,21 @@ public class ComplexityEstimator {
     }
 
     public static Double estimateRequestComplexity(URI requestURI, String body) {
-        switch (requestURI.getPath()) {
-            case "/compression":
-                return ImageCompressionCE.estimateComplexity(getImgCompressionFeatures(body));
-            case "/foxrabbit":
-                return FoxRabbitCE.estimateComplexity(getReqFeatures(requestURI));
-            case "/insectwar":
-                return InsectWarsCE.estimateComplexity(getReqFeatures(requestURI));
-            default:
-                System.out.println("Error: No service with this path");
-                return 0.0;
+        try {
+            switch (requestURI.getPath()) {
+                case "/compressimage":
+                    return ImageCompressionCE.estimateComplexity(getImgCompressionFeatures(body));
+                case "/simulate":
+                    return FoxRabbitCE.estimateComplexity(getReqFeatures(requestURI));
+                case "/insectwar":
+                    return InsectWarsCE.estimateComplexity(getReqFeatures(requestURI));
+                default:
+                    System.out.println("Error: No service with this path");
+                    return 0.0;
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to estimate complexity. Falling into round robin");
+            return 0.0;
         }
     }
 

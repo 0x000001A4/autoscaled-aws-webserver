@@ -9,6 +9,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
 
 
@@ -61,6 +62,7 @@ public class WebServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
             status = WebServerStatus.STATUS_OFF;
+            DynamoClient.updateStatus(DynamoClient.ServerStatus.STATUS_OFF);
             server.stop(0);
             threadPool.shutdown();
             try {

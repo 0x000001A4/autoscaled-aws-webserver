@@ -21,6 +21,8 @@ import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class LoadBalancerHandler implements HttpHandler {
 
+    private Worker prevWorker = null;
+
     private HttpResponse<byte[]> forward(HttpExchange he) {
         try {       
             // Read request body     
@@ -34,7 +36,9 @@ public class LoadBalancerHandler implements HttpHandler {
             URI reqURI = he.getRequestURI();
 
             Double complexity = ComplexityEstimator.estimateRequestComplexity(reqURI, body);
-            Worker worker = WorkersOracle.findBestWorkerToHandleRequest(complexity);
+            Worker worker = complexity.equals(0.0) ? WorkersOracle.roundRobin(prevWorker) : WorkersOracle.getTopWorker();
+            prevWorker = worker;
+            System.out.println(worker.toString());
             URI newURI = new URI("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + reqURI.toString());
             // Build new request
             HttpRequest httpRequest = HttpRequest.newBuilder()

@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.cnv.loadbalancer;
+package pt.ulisboa.tecnico.cnv.dynamoclient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 
 import pt.ulisboa.tecnico.cnv.javassist.tools.PrintMetrics;
-import pt.ulisboa.tecnico.cnv.webserver.WebServer;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
@@ -39,9 +38,16 @@ public class DynamoClient {
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
+    public static enum ServerStatus {STATUS_ON, STATUS_OFF};
+    private static ServerStatus status = ServerStatus.STATUS_OFF;
 
     public static void init(AmazonDynamoDB _dynamoDB) {
         dynamoDB = _dynamoDB;
+        status = ServerStatus.STATUS_ON;
+    }
+
+    public static void updateStatus(ServerStatus newStatus) {
+        status = newStatus;
     }
 
     public static void initServiceTables(List<String> serviceNames) {
@@ -98,8 +104,8 @@ public class DynamoClient {
         Map<String, AttributeValue> record = new HashMap<String, AttributeValue>();
         record.put("id", new AttributeValue(UUID.randomUUID().toString()));
         switch (metric.serviceName) {
-            case "compression":
-                record.put("image-size", new AttributeValue().withN(Integer.toString( ((byte[])metric.args[0]).length )));
+            case "compressimage":
+                record.put("image-size", new AttributeValue().withN(Integer.toString(((byte[])metric.args[0]).length)));
                 record.put("format", new AttributeValue((String)metric.args[1]));
                 record.put("compression-factor", new AttributeValue()
                     .withN(String.format(Locale.US, "%.5f", (float)metric.args[2])));
@@ -110,9 +116,9 @@ public class DynamoClient {
                 record.put("generations", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
                 break;
             case "insectwar":
-                record.put("max-rounds", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
-                record.put("army1-size", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("army2-size", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
+                record.put("max", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
+                record.put("army1", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
+                record.put("army2", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
                 break;
         }
         record.put("nblocks", new AttributeValue().withN(Long.toString((long)metric.nblocks)));
@@ -162,7 +168,7 @@ public class DynamoClient {
 
             threadPool.execute(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
-                    if (WebServer.getStatus().equals(WebServer.WebServerStatus.STATUS_ON)) {
+                    if (status.equals(ServerStatus.STATUS_ON)) {
                         updateDBTask.run();
                     }
                     else Thread.currentThread().interrupt();

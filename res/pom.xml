@@ -26,12 +26,13 @@
         sorts the projects into the correct build order;
         builds the selected projects in order. -->
     <modules>
+        <module>Dynamo Client</module>
         <module>Foxes and Rabbits</module>
         <module>Image Compression</module>
         <module>Insect Wars</module>
         <module>instrumentation</module>
-        <module>Load Balancer</module>
         <module>Web Server</module>
+        <module>Load Balancer</module>
     </modules>
 
     <profiles>

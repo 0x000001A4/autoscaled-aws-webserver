@@ -13,12 +13,15 @@ import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
+
+
 public class LoadBalancer {
 
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonEC2 ec2;
     public static enum LoadBalancerStatus {STATUS_ON, STATUS_OFF};
-    private static LoadBalancerStatus status;
+    private static LoadBalancerStatus status = LoadBalancerStatus.STATUS_OFF;
     public static Object queueLock = new Object();
 
     public static LoadBalancerStatus getStatus() {
@@ -55,7 +58,7 @@ public class LoadBalancer {
             .build()
         );
         DynamoClient.initServiceTables(new ArrayList<String>(
-            Arrays.asList("compression", "foxrabbit", "insectwar")
+            Arrays.asList("compressimage", "foxrabbit", "insectwar")
         ));
         
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
@@ -71,6 +74,7 @@ public class LoadBalancer {
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
         );
+        status = LoadBalancerStatus.STATUS_ON;
         server.start();
     }
 }
