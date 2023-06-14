@@ -134,7 +134,12 @@ public class WorkersOracle {
 
     public static Worker getTopWorker() {
         synchronized (LoadBalancer.queueLock) {
-            return workersQueue.poll();
+            if (workersQueue.isEmpty()) {
+                System.out.println("ERROR: Empty Queue");
+                System.out.println(workers.keySet().toString());
+                System.out.println(workersQueue.toString());
+            }
+            return workersQueue.peek();
         }
     }
 
