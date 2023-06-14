@@ -73,7 +73,9 @@ public class WorkersOracle {
         Double ninsts = Double.parseDouble(record.get("ninsts").getN());
         Double nmethods = Double.parseDouble(record.get("nmethods").getN());
 
-        return 0.7 * ninsts + 0.3 * nblocks + 0.0 * nmethods;
+        Double ratio = ninsts <= 0 ? 2 : nblocks / ninsts;
+
+        return ratio * ninsts + (1 - ratio) * nblocks + 0.0 * nmethods;
     }
 
     public static void updateLBWithInstrumentationMetrics() {
