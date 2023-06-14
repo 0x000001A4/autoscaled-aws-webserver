@@ -3,7 +3,7 @@ package pt.ulisboa.tecnico.cnv.webserver;
 import com.amazonaws.services.ec2.model.Instance;
 
 public class Worker implements Comparable<Worker> {
-    
+
     private String id;
     private Double load;
     private Double avgCPUUtilization;

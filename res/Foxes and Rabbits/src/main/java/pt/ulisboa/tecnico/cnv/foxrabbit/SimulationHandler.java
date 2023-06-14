@@ -56,18 +56,20 @@ public class SimulationHandler implements HttpHandler, RequestHandler<Map<String
     }
 
     public Map<String, String> queryToMap(String query) {
-        if(query == null) {
+        if (query == null) {
             return null;
         }
         Map<String, String> result = new HashMap<>();
-        for(String param : query.split("&")) {
+
+        for (String param : query.split("&")) {
             String[] entry = param.split("=");
-            if(entry.length > 1) {
+            if (entry.length > 1) {
                 result.put(entry[0], entry[1]);
-            }else{
+            } else{
                 result.put(entry[0], "");
             }
         }
+
         return result;
     }
 

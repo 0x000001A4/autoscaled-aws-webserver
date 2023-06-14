@@ -102,28 +102,53 @@ public class DynamoClient {
 
     public static Map<String, AttributeValue> buildRecord(PrintMetrics.Metric metric) {
         Map<String, AttributeValue> record = new HashMap<String, AttributeValue>();
-        record.put("id", new AttributeValue(UUID.randomUUID().toString()));
+
+        String id = UUID.randomUUID().toString();
+
         switch (metric.serviceName) {
             case "compression":
-                record.put("image-size", new AttributeValue().withN(Integer.toString(((byte[])metric.args[0]).length)));
-                record.put("format", new AttributeValue((String)metric.args[1]));
-                record.put("compression-factor", new AttributeValue()
-                    .withN(String.format(Locale.US, "%.5f", (float)metric.args[2])));
+                String imageSize = Integer.toString(((byte[]) metric.args[0]).length);
+                String format = (String) metric.args[1];
+                String compressionFactor = String.format(Locale.US, "%.5f", (float) metric.args[2]);
+
+                id = String.format("is:%s|f:%s|cf:%s", imageSize, format, compressionFactor);
+
+                record.put("image-size", new AttributeValue().withN(imageSize));
+                record.put("format", new AttributeValue(format));
+                record.put("compression-factor", new AttributeValue().withN(compressionFactor));
+
                 break;
             case "foxrabbit":
-                record.put("world", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
-                record.put("scenario", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("generations", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
+                String world = Integer.toString((int) metric.args[0]);
+                String scenario = Integer.toString((int) metric.args[1]);
+                String generations = Integer.toString((int) metric.args[2]);
+
+                id = String.format("w:%s|s:%s|g:%s", world, scenario, generations);
+
+                record.put("world", new AttributeValue().withN(world));
+                record.put("scenario", new AttributeValue().withN(scenario));
+                record.put("generations", new AttributeValue().withN(generations));
+
                 break;
             case "insectwar":
-                record.put("max", new AttributeValue().withN(Integer.toString((int)metric.args[0])));
-                record.put("army1", new AttributeValue().withN(Integer.toString((int)metric.args[1])));
-                record.put("army2", new AttributeValue().withN(Integer.toString((int)metric.args[2])));
+                String max = Integer.toString((int) metric.args[0]);
+                String army1 = Integer.toString((int) metric.args[1]);
+                String army2 = Integer.toString((int) metric.args[2]);
+
+                id = String.format("max:%s|a1:%s|a2:%s", max, army1, army2);
+
+                record.put("max", new AttributeValue().withN(max));
+                record.put("army1", new AttributeValue().withN(army1));
+                record.put("army2", new AttributeValue().withN(army2));
+
                 break;
         }
-        record.put("nblocks", new AttributeValue().withN(Long.toString((long)metric.nblocks)));
-        record.put("nmethods", new AttributeValue().withN(Long.toString((long)metric.nmethods)));
-        record.put("ninsts", new AttributeValue().withN(Long.toString((long)metric.ninsts)));
+
+        record.put("id", new AttributeValue(id));
+        record.put("nblocks", new AttributeValue().withN(Long.toString((long) metric.nblocks)));
+        record.put("nmethods", new AttributeValue().withN(Long.toString((long) metric.nmethods)));
+        record.put("ninsts", new AttributeValue().withN(Long.toString((long) metric.ninsts)));
+
         return record;
     }
 

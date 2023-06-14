@@ -11,9 +11,9 @@ public class Ecosystem {
     private int rabbit_breeding;
     private int fox_breeding;
     private int fox_starvation;
-    
+
     private static Worlds worlds = new Worlds();
-    
+
     private Cell[] board;
     private Cell[] aux_board;
 
@@ -156,7 +156,7 @@ public class Ecosystem {
         }
 
         if(new_pos != -1) {
-            
+
             //Make sure it hasn't been eaten by another fox
             if(this.board[new_pos].getType() == Type.RABBIT){
                 this.board[pos].setStarvingAge(0);
@@ -172,7 +172,7 @@ public class Ecosystem {
                     if(this.board[new_pos].getStarvingAge() != 0){
                         this.board[new_pos].setStarvingAge(this.board[pos].getStarvingAge());
                     }
-                } 
+                }
                 else if(this.fox_breeding > this.board[pos].getBreedingAge() && this.board[new_pos].getBreedingAge() == this.board[pos].getBreedingAge()) {
                     if(this.board[new_pos].getStarvingAge() > this.board[pos].getStarvingAge()){
                         this.board[new_pos].setStarvingAge(this.board[pos].getStarvingAge());
@@ -271,18 +271,18 @@ public class Ecosystem {
                 }
                 this.aux_board[j].copy(this.board[j]);
             }
-            
+
             //printWorld(i, 1);
 
             int live_rabbits = countType(Type.RABBIT);
             int live_foxes = countType(Type.FOX);
-            
+
             //everybody died
             if(live_rabbits == 0 || live_foxes == 0) {
                 return i;
             }
             //The configuration of the animals is maintained for two consecutive generations and there is dominance of one species
-            else if((last_live_rabbits == live_rabbits && last_live_foxes == live_foxes) 
+            else if((last_live_rabbits == live_rabbits && last_live_foxes == live_foxes)
                         && (live_rabbits / live_foxes > DOMINANCE || live_foxes / live_rabbits > DOMINANCE)) {
                 return i;
             }

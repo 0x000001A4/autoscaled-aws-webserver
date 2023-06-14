@@ -2,66 +2,28 @@ package pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
+public abstract class RegressionCE {
 
-public class RegressionCE {
-
-    private OLSMultipleLinearRegression regModel = new OLSMultipleLinearRegression();
-    private double[] regParameters;
-    private List<Double> accComplexities = new ArrayList<>();
-    private List<List<Double>> accFeatures = new ArrayList<>(); 
-    
-    public double[] getParameters() {
-        return regParameters;
-    }
+    protected List<Double> accComplexities = new ArrayList<>();
+    protected List<List<Double>> accFeatures = new ArrayList<>();
 
     public void clearModelData() {
         accComplexities.clear();
         accFeatures.clear();
     }
 
-    public void addDataToModel(Double complexity, List<Double> features) {
-        accComplexities.add(complexity);
-        accFeatures.add(features);
-    }
+    public abstract void addDataToModel(Double complexity, List<Double> features);
 
-    public void addDataToModel(List<Double> complexity, List<List<Double>> features) {
-        accComplexities.addAll(complexity);
-        accFeatures.addAll(features);
-    }
-        
-    public void updateModelParameters(List<Double> complexities, List<List<Double>> features) {
-        clearModelData();
-        addDataToModel(complexities, features);
-        updateParameters();
-    }
+    public abstract void addDataToModel(List<Double> complexity, List<List<Double>> features);
 
-    public void updateParameters() {
+    public abstract void updateModelParameters(Map<List<Double>, Double> featuresComplexities);
 
-        System.out.println(accComplexities.toString());
-        System.out.println(accFeatures.toString());
+    public abstract void updateModelParameters(List<Double> complexities, List<List<Double>> features);
 
-        regModel.newSampleData(
-            accComplexities
-                .stream()
-                .mapToDouble(Double::doubleValue)
-                .toArray(), 
-            accFeatures
-                .stream()
-                .map(feature -> feature.stream().mapToDouble(Double::doubleValue).toArray())
-                .toArray(double[][]::new)
-        );
+    public abstract void updateParameters();
 
-        regParameters = regModel.estimateRegressionParameters();
-    }
-
-    public Double estimateComplexity(double[] reqArgs) {
-        double estimate = regParameters[0];
-        for (int i = 1; i < regParameters.length; i++) {
-            estimate += regParameters[i]*reqArgs[i-1];
-        }
-        return estimate;
-    }
+    public abstract Double estimateComplexity(double[] reqArgs);
 
 }

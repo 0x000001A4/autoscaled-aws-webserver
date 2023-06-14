@@ -7,19 +7,23 @@ import java.util.Map;
 import smile.regression.RidgeRegression;
 
 public class InsectWarsCE {
-    
-    private static RidgeRegressionCE regEstimator = new RidgeRegressionCE();
-    
+
+    private static RegressionCE regEstimator = new RidgeRegressionCE();
+
+    public static void updateRegParameters(Map<List<Double>, Double> featuresComplexities) {
+        regEstimator.updateModelParameters(featuresComplexities);
+    }
+
     public static void updateRegParameters(List<Double> complexities, List<List<Double>> features) {
         regEstimator.updateModelParameters(complexities, features);
     }
 
     public static double estimateComplexity(Map<String, String> reqFeatures) {
-        return regEstimator.estimateComplexity(new double[] { 
-                Double.parseDouble(reqFeatures.get("max")), 
+        return regEstimator.estimateComplexity(new double[] {
+                Double.parseDouble(reqFeatures.get("max")),
                 Math.abs(
                     Double.parseDouble(reqFeatures.get("army1")) - Double.parseDouble(reqFeatures.get("army2"))
-                ) 
+                )
             }
         );
     }

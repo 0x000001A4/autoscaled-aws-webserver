@@ -1,12 +1,30 @@
 #!/bin/bash
 
-# Syntax:  ./testinsect.sh <ip> <port> <max> <army1> <army2>
-# Example: ./testinsect.sh 127.0.0.1 8000 1000 10 10
-HOST=$1
-PORT=$2
-max=$3
-army1=$4
-army2=$5
+# Syntax:  ./testinsect.sh  <max> <army1> <army2>
+# Example: ./testinsect.sh 1000 10 10
+
+function print_usage {
+    echo "Usage: ${BASH_SOURCE[0]} <max> <army1> <army2>"
+}
+
+if [ $# -ne 3 ]; then
+    print_usage
+    exit
+fi
+
+if [ ! -f instance.dns ]; then
+    echo "File instance.dns not found!"
+    exit
+fi
+
+HOST=$(cat instance.dns)
+PORT=8000
+max=$1
+army1=$2
+army2=$3
+
+echo "Testing ${HOST}:${PORT} with ${max} rounds and armies size of ${army1} and ${army2}..."
+echo
 
 function test_batch_requests {
 	REQUESTS=3

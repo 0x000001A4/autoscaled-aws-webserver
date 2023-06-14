@@ -57,7 +57,7 @@ public class LoadBalancer {
             .withRegion(AWS_REGION)
             .build()
         );
-        
+
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
         server.setExecutor(threadPool);
@@ -65,7 +65,7 @@ public class LoadBalancer {
         server.createContext("/simulate", loadBalancerHandler);
         server.createContext("/compressimage", loadBalancerHandler);
         server.createContext("/insectwar", loadBalancerHandler);
-        
+
         status = LoadBalancerStatus.STATUS_ON;
         WorkersOracle.init(threadPool);
         DynamoClient.initServiceTables(Arrays.asList(WorkersOracle.workerServiceNames));

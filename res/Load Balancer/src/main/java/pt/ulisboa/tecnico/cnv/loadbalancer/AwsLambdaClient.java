@@ -66,7 +66,7 @@ public class AwsLambdaClient {
            InvokeResult res = awsLambdaClient.invoke(request);
            String value = StandardCharsets.UTF_8.decode(res.getPayload()).toString();
            System.out.println(value);
- 
+
        } catch(AWSLambdaException e) {
            System.err.println(e.getMessage());
            System.exit(1);

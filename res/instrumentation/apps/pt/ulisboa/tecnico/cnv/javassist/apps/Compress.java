@@ -22,7 +22,7 @@ public class Compress {
     // Copy bytes from one stream to the other
     byte[] buffer = new byte[4096];
     int bytes_read;
-    while((bytes_read = in.read(buffer)) != -1) 
+    while((bytes_read = in.read(buffer)) != -1)
       out.write(buffer, 0, bytes_read);
     // And close the streams
     in.close();
@@ -30,14 +30,14 @@ public class Compress {
   }
 
   /** Zip the contents of the directory, and save it in the zipfile */
-  public static void zipDirectory(String dir, String zipfile) 
+  public static void zipDirectory(String dir, String zipfile)
        throws IOException, IllegalArgumentException {
     // Check that the directory is a directory, and get its contents
     File d = new File(dir);
     if (!d.isDirectory())
       throw new IllegalArgumentException("Compress: not a directory:  " + dir);
     String[] entries = d.list();
-    byte[] buffer = new byte[4096];  // Create a buffer for copying 
+    byte[] buffer = new byte[4096];  // Create a buffer for copying
     int bytes_read;
 
     // Create a stream to compress data and write it to the zipfile
@@ -75,7 +75,7 @@ public class Compress {
       String from = args[0], to;
       File f = new File(from);
       boolean directory = f.isDirectory();   // Is it a file or directory?
-      if (args.length == 2) to = args[1];    
+      if (args.length == 2) to = args[1];
       else {                                 // If destination not specified
         if (directory) to = from + ".zip";   //   use a .zip suffix
         else to = from + ".gz";              //   or a .gz suffix

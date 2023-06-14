@@ -8,13 +8,13 @@ package pt.ulisboa.tecnico.cnv.javassist.apps;
 import java.io.*;
 
 /**
- * This class is a standalone program to copy a file, and also defines a 
+ * This class is a standalone program to copy a file, and also defines a
  * static copy() method that other programs can use to copy files.
  **/
 public class FileCopy {
   /** The main() method of the standalone program.  Calls copy(). */
   public static void main(String[] args) {
-    if (args.length != 2)    // Check arguments 
+    if (args.length != 2)    // Check arguments
       System.err.println("Usage: java FileCopy <source file> <destination>");
     else {
       // Call copy() to do the copy, and display any error messages it throws.
@@ -31,7 +31,7 @@ public class FileCopy {
   public static void copy(String from_name, String to_name) throws IOException{
     File from_file = new File(from_name);  // Get File objects from Strings
     File to_file = new File(to_name);
-    
+
     // First make sure the source file exists, is a file, and is readable.
     if (!from_file.exists())
       abort("FileCopy: no such source file: " + from_name);
@@ -39,12 +39,12 @@ public class FileCopy {
       abort("FileCopy: can't copy directory: " + from_name);
     if (!from_file.canRead())
       abort("FileCopy: source file is unreadable: " + from_name);
-    
+
     // If the destination is a directory, use the source file name
     // as the destination file name
     if (to_file.isDirectory())
       to_file = new File(to_file, from_file.getName());
-    
+
     // If the destination exists, make sure it is a writeable file
     // and ask before overwriting it.  If the destination doesn't
     // exist, make sure the directory exists and is writeable.
@@ -61,7 +61,7 @@ public class FileCopy {
       if (!response.equals("Y") && !response.equals("y"))
         abort("FileCopy: existing file was not overwritten.");
     }
-    else {  
+    else {
       // if file doesn't exist, check if directory exists and is writeable.
       // If getParent() returns null, then the directory is the current dir.
       // so look up the user.dir system property to find out what that is.
@@ -75,7 +75,7 @@ public class FileCopy {
       if (!dir.canWrite())
         abort("FileCopy: destination directory is unwriteable: " + parent);
     }
-    
+
     // If we've gotten this far, then everything is okay.
     // So we copy the file, a buffer of bytes at a time.
     FileInputStream from = null;  // Stream to read from source
@@ -85,12 +85,12 @@ public class FileCopy {
       to = new FileOutputStream(to_file);     // Create output stream
       byte[] buffer = new byte[4096];         // A buffer to hold file contents
       int bytes_read;                         // How many bytes in buffer
-      // Read a chunk of bytes into the buffer, then write them out, 
+      // Read a chunk of bytes into the buffer, then write them out,
       // looping until we reach the end of the file (when read() returns -1).
       // Note the combination of assignment and comparison in this while
       // loop.  This is a common I/O programming idiom.
       while((bytes_read = from.read(buffer)) != -1) // Read bytes until EOF
-        to.write(buffer, 0, bytes_read);            //   write bytes 
+        to.write(buffer, 0, bytes_read);            //   write bytes
     }
     // Always close the streams, even if exceptions were thrown
     finally {
@@ -100,7 +100,7 @@ public class FileCopy {
   }
 
   /** A convenience method to throw an exception */
-  private static void abort(String msg) throws IOException { 
-    throw new IOException(msg); 
+  private static void abort(String msg) throws IOException {
+    throw new IOException(msg);
   }
 }

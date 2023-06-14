@@ -13,7 +13,7 @@ public class InsectWars {
         if (args.length < 3 ){
             System.out.println("InsectWars  <max-rounds> <num-colonies--army-1> <num-colonies-army-2>");
             System.exit(-1);
-        }        
+        }
 
         int max=Integer.parseInt(args[0]), sz1 = Integer.parseInt(args[1]), sz2 = Integer.parseInt(args[2]);
 
@@ -44,7 +44,7 @@ public class InsectWars {
 
         // Simulate the war
         i= 0;
-        
+
         // max iters
         while (!army1.isEmpty() && !army2.isEmpty() && ++i<max) {
             // System.out.println("Iteration " + i );
@@ -62,7 +62,7 @@ public class InsectWars {
 
                 // Reduce defender's health by the damage
                 defender.reduceHealth(damage);
-            
+
 
                 // Print the battle result
                 if  (i % 2 == 0){
@@ -95,7 +95,7 @@ public class InsectWars {
         } else {
             response += "<br>Army 1 wins the war!\n";
         }
-        
+
         return response;
     }
 }

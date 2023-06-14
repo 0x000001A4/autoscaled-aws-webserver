@@ -22,7 +22,7 @@ import pt.ulisboa.tecnico.cnv.webserver.Worker;
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 
 public class WorkersOracle {
-    
+
     private static Map<String, Worker> workers = new ConcurrentHashMap<String, Worker>();
     public static String[] workerServiceNames = {"compression", "foxrabbit", "insectwar"};
     private static Runnable queryDBTask = WorkersOracle::updateLBWithInstrumentationMetrics;
@@ -57,10 +57,10 @@ public class WorkersOracle {
                         queryDBTask.run();
                     }
                     else Thread.currentThread().interrupt();
-                    
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -68,51 +68,66 @@ public class WorkersOracle {
         });
     }
 
+    private static Double getComplexity(Map<String, AttributeValue> record) {
+        Double nblocks = Double.parseDouble(record.get("nblocks").getN());
+        Double ninsts = Double.parseDouble(record.get("ninsts").getN());
+        Double nmethods = Double.parseDouble(record.get("nmethods").getN());
+
+        return 0.7 * ninsts + 0.3 * nblocks + 0.0 * nmethods;
+    }
+
     public static void updateLBWithInstrumentationMetrics() {
         System.out.println("Entering method to update LB with Instrumentation metrics");
         for (String serviceName: workerServiceNames) {
             List<Map<String, AttributeValue>> metrics = DynamoClient.queryDynamoDB(serviceName);
-            List<Double> complexities = new ArrayList<Double>();
+            List<Double> complexities = new ArrayList<>();
+
             switch (serviceName) {
                 case "compression": {
-                    List<List<Double>> features = new ArrayList<List<Double>>();
+                    Map<List<Double>, Double> featuresComplexities = new HashMap<>();
+
                     for (Map<String, AttributeValue> record: metrics) {
-                        features.add(Arrays.asList(
+                        featuresComplexities.put(Arrays.asList(
                             Double.parseDouble(record.get("image-size").getN()),
                             /* Double.parseDouble(record.get("format").getS()) TODO */
                             Double.parseDouble(record.get("compression-factor").getN())
-                        ));
-                        complexities.add(Double.parseDouble(record.get("ninsts").getN()));
+                        ), getComplexity(record));
                     }
-                    ImageCompressionCE.updateRegParameters(complexities, features);
+
+                    ImageCompressionCE.updateRegParameters(featuresComplexities);
+
                     break;
                 }
-                
+
                 case "foxrabbit": {
-                    List<Entry<String, Double>> features = new ArrayList<>();
+                    Map<Entry<String, Double>, Double> featuresComplexities = new HashMap<>();
+
                     for (Map<String, AttributeValue> record: metrics) {
-                        features.add(new SimpleEntry<String, Double>(
+                        featuresComplexities.put(new SimpleEntry<String, Double>(
                             record.get("world").getN()+record.get("scenario").getN(),
-                            Double.parseDouble(record.get("generations").getN()))
-                        );
-                        complexities.add(Double.parseDouble(record.get("ninsts").getN()));                        
+                            Double.parseDouble(record.get("generations").getN())
+                        ), getComplexity(record));
                     }
-                    FoxRabbitCE.updateRegParameters(complexities, features);
+
+                    FoxRabbitCE.updateRegParameters(featuresComplexities);
+
                     break;
                 }
-                
+
                 case "insectwar": {
-                    List<List<Double>> features = new ArrayList<List<Double>>();
+                    Map<List<Double>, Double> featuresComplexities = new HashMap<>();
+
                     for (Map<String, AttributeValue> record: metrics) {
-                        features.add(Arrays.asList(
+                        featuresComplexities.put(Arrays.asList(
                             Double.parseDouble(record.get("max").getN()),
                             Math.abs(
                                 Double.parseDouble(record.get("army1").getN()) - Double.parseDouble(record.get("army2").getN())
                             )
-                        ));  
-                        complexities.add(Double.parseDouble(record.get("ninsts").getN())); 
+                        ), getComplexity(record));
                     }
-                    InsectWarsCE.updateRegParameters(complexities, features);
+
+                    InsectWarsCE.updateRegParameters(featuresComplexities);
+
                     break;
                 }
             }

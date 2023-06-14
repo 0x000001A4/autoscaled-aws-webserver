@@ -24,8 +24,8 @@ public class LoadBalancerHandler implements HttpHandler {
     private Worker prevWorker = null;
 
     private HttpResponse<byte[]> forward(HttpExchange he) {
-        try {       
-            // Read request body     
+        try {
+            // Read request body
             StringBuilder bodyBuilder = new StringBuilder();
             BufferedReader reader = new BufferedReader(new InputStreamReader(he.getRequestBody()));
             String line;

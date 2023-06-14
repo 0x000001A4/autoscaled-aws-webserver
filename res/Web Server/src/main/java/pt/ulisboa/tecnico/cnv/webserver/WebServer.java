@@ -21,7 +21,7 @@ public class WebServer {
     public static ExecutorService getThreadPool() {
         return threadPool;
     }
-    
+
     public static WebServerStatus getStatus() {
         return status;
     }

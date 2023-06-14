@@ -1,7 +1,7 @@
 package pt.ulisboa.tecnico.cnv.foxrabbit;
 
 public class Cell {
-    
+
     private int breeding_age;
     private int starving_age;
     private Type type;

@@ -2,14 +2,13 @@ package pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import smile.regression.RidgeRegression;
 
-public class RidgeRegressionCE {
-    
-    private RidgeRegression regModel;
-    private List<Double> accComplexities = new ArrayList<>();
-    private List<List<Double>> accFeatures = new ArrayList<>(); 
+public class RidgeRegressionCE extends RegressionCE {
+
+    protected RidgeRegression regModel;
     private final double lambda = 0.1;
 
     public void clearModelData() {
@@ -26,7 +25,19 @@ public class RidgeRegressionCE {
         accComplexities.addAll(complexity);
         accFeatures.addAll(features);
     }
-       
+
+
+    public void updateModelParameters(Map<List<Double>, Double> featuresComplexities) {
+        List<List<Double>> features = new ArrayList<>();
+        List<Double> complexities = new ArrayList<>();
+
+        featuresComplexities.forEach((feature, complexity) -> {
+            features.add(feature);
+            complexities.add(complexity);
+        });
+
+        updateModelParameters(complexities, features);
+    }
 
     public void updateModelParameters(List<Double> complexities, List<List<Double>> features) {
         if (complexities.size() == 0 || features.size() == 0) return;
@@ -34,19 +45,19 @@ public class RidgeRegressionCE {
             .stream()
             .map(feature -> feature.stream().mapToDouble(Double::doubleValue).toArray())
             .toArray(double[][]::new);
-            
+
         double[] y = complexities.stream().mapToDouble(Double::doubleValue).toArray();
 
         regModel = new RidgeRegression(x, y, lambda);
     }
 
     public void updateParameters() {
-        
+
         if (accComplexities.size() <= 1 || accFeatures.size() <= 1) {
             System.out.println("Not enough data points for Ridge Regression");
             return;
         }
-    
+
         // Check that the number of features doesn't exceed 2.
         if (accFeatures.stream().anyMatch(feature -> feature.size() > 2)) {
             System.out.println("Too many features for Ridge Regression");
@@ -58,7 +69,7 @@ public class RidgeRegressionCE {
             System.out.println("Mismatch between number of data points and targets for Ridge Regression");
             return;
         }
-            
+
         double[][] x = accFeatures
             .stream()
             .map(feature -> feature.stream().mapToDouble(Double::doubleValue).toArray())

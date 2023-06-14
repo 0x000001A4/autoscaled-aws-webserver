@@ -16,7 +16,7 @@ import java.util.*;  // Import all classes (including Vector) from java.util
  * object to cache computed values instead of a fixed-size array.  A Vector
  * is like an array, but can grow to any size.  The factorial() method is
  * declared "synchronized" so that it can be safely used in multi-threaded
- * programs.  Look up java.math.BigInteger and java.util.Vector while 
+ * programs.  Look up java.math.BigInteger and java.util.Vector while
  * studying this class.
  **/
 public class Factorial4 {
@@ -36,7 +36,7 @@ public class Factorial4 {
 
   /**
    * A simple main() method that we can use as a standalone test program
-   * for our factorial() method.  
+   * for our factorial() method.
    **/
   public static void main(String[] args) {
     for(int i = 1; i <= 50; i++) System.out.println(i + "! = " + factorial(i));

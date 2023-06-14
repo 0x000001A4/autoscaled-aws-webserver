@@ -1,13 +1,31 @@
 #!/bin/bash
 
-# Syntax:  ./testcompress.sh <ip> <port> <input image>
-# Example: ./testcompress.sh 127.0.0.1 8000 res/Ct0zUz-XgAAV69z.jpg
-HOST=$1
-PORT=$2
-INPUT=$3
+# Syntax:  ./testcompress.sh <input image> <compression-factor>
+# Example: ./testcompress.sh res/Ct0zUz-XgAAV69z.jpg 0.1
 
-TARGET_FORMAT="png"
-COMPRESSION_FACTOR="0.1"
+function print_usage {
+    echo "Usage: ${BASH_SOURCE[0]} <input image> <compression-factor>"
+}
+
+if [ $# -ne 2 ]; then
+    print_usage
+    exit
+fi
+
+if [ ! -f instance.dns ]; then
+    echo "File instance.dns not found!"
+    exit
+fi
+
+HOST=$(cat instance.dns)
+PORT=8000
+INPUT=$1
+COMPRESSION_FACTOR=$2
+
+TARGET_FORMAT=$(file --extension ${INPUT} | awk '{ print $2; }' | awk -F '/' '{ print $1; }')
+
+echo "Testing ${HOST}:${PORT} with image ${INPUT} (format: ${TARGET_FORMAT}) and compression factor ${COMPRESSION_FACTOR}..."
+echo
 
 function test_batch_requests {
 	REQUESTS=3

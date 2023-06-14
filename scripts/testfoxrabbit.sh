@@ -1,12 +1,30 @@
 #!/bin/bash
 
-# Syntax:  ./testfoxrabbit.sh <ip> <port> <generations> <world> <scenario>
-# Example: ./testfoxrabbit.sh 127.0.0.1 8000 1000 4 2
-HOST=$1
-PORT=$2
-GENERATIONS=$3
-WORLD=$4
-SCENARIO=$5
+# Syntax:  ./testfoxrabbit.sh <generations> <world> <scenario>
+# Example: ./testfoxrabbit.sh 1000 4 2
+
+function print_usage {
+    echo "Usage: ${BASH_SOURCE[0]} <generations> <world> <scenario>"
+}
+
+if [ $# -ne 3 ]; then
+    print_usage
+    exit
+fi
+
+if [ ! -f instance.dns ]; then
+    echo "File instance.dns not found!"
+    exit
+fi
+
+HOST=$(cat instance.dns)
+PORT=8000
+GENERATIONS=$1
+WORLD=$2
+SCENARIO=$3
+
+echo "Testing ${HOST}:${PORT} with ${GENERATIONS} generations on world ${WORLD}, scenario ${SCENARIO}..."
+echo
 
 function test_batch_requests {
 	REQUESTS=3

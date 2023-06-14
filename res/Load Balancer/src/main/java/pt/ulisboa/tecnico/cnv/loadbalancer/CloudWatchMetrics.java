@@ -29,11 +29,11 @@ public class CloudWatchMetrics {
                         )
             .withStartTime(new Date(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(60)))
             .withEndTime(new Date())
-            .withPeriod(10) 
+            .withPeriod(10)
             .withStatistics(Statistic.Average);
 
         GetMetricStatisticsResult res = cw.getMetricStatistics(request);
-        
+
         double totalCPUUtilization = 0.0;
         for (Datapoint dp : res.getDatapoints()) {
             totalCPUUtilization += dp.getAverage();

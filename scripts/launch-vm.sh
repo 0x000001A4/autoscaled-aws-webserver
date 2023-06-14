@@ -10,7 +10,7 @@ aws ec2 run-instances \
     --security-group-ids "${AWS_SG_ID}" \
     --monitoring Enabled=true \
     --query "Instances[0].InstanceId" \
-    --output text > instance.id
+    --output text | tr -d '\r\n' > instance.id
 echo "New instance with id $(cat instance.id)."
 
 # Wait for instance to be running.

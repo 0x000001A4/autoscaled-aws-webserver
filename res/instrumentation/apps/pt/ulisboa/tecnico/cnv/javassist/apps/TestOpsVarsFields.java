@@ -1,6 +1,6 @@
 package pt.ulisboa.tecnico.cnv.javassist.apps;
 
-/* simple example class that exercises parameter passing, field and variable accesses to examine resulting bytecodes */ 
+/* simple example class that exercises parameter passing, field and variable accesses to examine resulting bytecodes */
 public class TestOpsVarsFields
 {
     private byte _b;
@@ -33,7 +33,7 @@ public class TestOpsVarsFields
         if (i==0)
         {
             return _i;
-        } 
+        }
         else
         {
             return i;
@@ -61,7 +61,7 @@ public class TestOpsVarsFields
         _o2 = o2;
         _o1 = o3;
         _o2 = res;
-    
+
 
         return res;
     }

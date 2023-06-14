@@ -23,7 +23,7 @@ scp -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH $DIR/../scripts/aws
 # Install project dependencies.
 cmd="source awsconfig.sh; cd ~ec2-user/res; mvn clean install; mvn compile"
 
-ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd 
+ssh -o StrictHostKeyChecking=no -i $AWS_EC2_SSH_KEYPAIR_PATH ec2-user@$(cat instance.dns) $cmd
 
 
 

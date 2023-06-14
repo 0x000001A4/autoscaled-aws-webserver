@@ -5,7 +5,7 @@ public class Simulation {
         int n_generations = Integer.parseInt(args[0]);
         int world = Integer.parseInt(args[1]);
         int n_scenario = Integer.parseInt(args[2]);
-        
+
         Ecosystem ecosystem = new Ecosystem(world, n_scenario);
 
         //ecosystem.printWorld(0, 0);

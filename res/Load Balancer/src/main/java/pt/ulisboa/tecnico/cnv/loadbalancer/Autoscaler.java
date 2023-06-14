@@ -31,7 +31,7 @@ public class Autoscaler {
     // Policies
     private static double MIN_AVG_CPU_UTILIZATION = 0.25;
     private static double MAX_AVG_CPU_UTILIZATION = 0.75;
-    
+
     public static String GET_AMI_ID() {
         try {
             return Files.readString(Paths.get("/home/ec2-user/image.id"), StandardCharsets.UTF_8).strip();
@@ -99,7 +99,7 @@ public class Autoscaler {
                                 .withMaxCount(1)
                                 .withKeyName(KEY_NAME)
                                 .withSecurityGroupIds(SEC_GROUP_ID);
-            
+
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
             System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
@@ -125,7 +125,7 @@ public class Autoscaler {
                 TerminateInstancesResult res = ec2.terminateInstances(termInstanceReq);
                 List<InstanceStateChange> stateChanges = res.getTerminatingInstances();
                 for (InstanceStateChange stChange: stateChanges) {
-                    System.out.println("The ID of the {status: " + stChange.getCurrentState().getName() + 
+                    System.out.println("The ID of the {status: " + stChange.getCurrentState().getName() +
                         "} instance is " + stChange.getInstanceId());
                     if (stChange.getCurrentState().getName().equals(InstanceStateName.Terminated.toString())) {
                         terminated = true;
