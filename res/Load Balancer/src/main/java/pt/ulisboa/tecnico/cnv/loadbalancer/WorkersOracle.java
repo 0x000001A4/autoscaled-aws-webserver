@@ -92,7 +92,7 @@ public class WorkersOracle {
                     List<Entry<String, Double>> features = new ArrayList<>();
                     for (Map<String, AttributeValue> record: metrics) {
                         features.add(new SimpleEntry<String, Double>(
-                            record.get("world").getS()+record.get("scenario").getS(),
+                            record.get("world").getN()+record.get("scenario").getN(),
                             Double.parseDouble(record.get("generations").getN()))
                         );
                         complexities.add(Double.parseDouble(record.get("ninsts").getN()));                        

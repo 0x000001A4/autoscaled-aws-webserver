@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class ImageCompressionCE {
     
-    private static RegressionCE regEstimator = new RegressionCE();
+    private static RidgeRegressionCE regEstimator = new RidgeRegressionCE();
 
     public static void updateRegParameters(List<Double> complexities, List<List<Double>> features) {
         regEstimator.updateModelParameters(complexities, features);

@@ -1,12 +1,15 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import smile.regression.RidgeRegression;
+
 public class InsectWarsCE {
     
-    private static RegressionCE regEstimator = new RegressionCE();
-
+    private static RidgeRegressionCE regEstimator = new RidgeRegressionCE();
+    
     public static void updateRegParameters(List<Double> complexities, List<List<Double>> features) {
         regEstimator.updateModelParameters(complexities, features);
     }

@@ -55,6 +55,11 @@
             <artifactId>JavassistWrapper</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.haifengl</groupId>
+            <artifactId>smile-core</artifactId>
+            <version>1.5.1</version>
+        </dependency>
     </dependencies>
 
 </project>
