@@ -44,6 +44,7 @@ public class Autoscaler {
     public static void init(AmazonEC2 ec2Client) {
         ec2 = ec2Client;
         launchEC2Instance();
+        printActiveInstances();
         autoscalingThread.start();
     }
 
@@ -53,7 +54,8 @@ public class Autoscaler {
                 /* Each 60 seconds update the avgCPUUtilization of each worker */
                 CloudWatchMetrics.updateWorkersAvgCPUUtilization();
                 updateActiveWorkers();
-                Thread.sleep(60000);
+                printActiveInstances();
+                Thread.sleep(30000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -100,11 +102,13 @@ public class Autoscaler {
                     activeInstances.add(instance.getInstanceId());
             }
         }
-        System.out.println(String.format("In AWS Console I have: %s instances. Listing instances:\n", activeInstances.size()));
+        System.out.println();
+        System.out.println(String.format("In AWS Console I have: %s instances. Listing instances:", activeInstances.size()));
         System.out.println(activeInstances.toString());
 
-        System.out.println("In WorkersOracle I have: %s workers. Listing workers\n"+WorkersOracle.getWorkers().size());
+        System.out.println(String.format("In WorkersOracle I have: %s workers. Listing workers", WorkersOracle.getWorkers().size()));
         System.out.println(WorkersOracle.getWorkers().toString());
+        System.out.println();
     }
 
     public static void launchEC2Instance() {
@@ -120,9 +124,7 @@ public class Autoscaler {
 
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
-            printActiveInstances();
-            
-
+        
             String workerId = instance.getInstanceId();
             WorkersOracle.addWorker(new Worker(workerId, instance));
 
@@ -151,7 +153,6 @@ public class Autoscaler {
                     }
                 }
             }
-            printActiveInstances();
 
         } catch (AmazonServiceException ase) {
             WorkersOracle.addWorker(worker);
@@ -159,7 +160,6 @@ public class Autoscaler {
             System.out.println("Reponse Status Code: " + ase.getStatusCode());
             System.out.println("Error Code: " + ase.getErrorCode());
             System.out.println("Request ID: " + ase.getRequestId());
-            printActiveInstances();
         }
     }
 

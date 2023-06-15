@@ -99,6 +99,12 @@ public class RidgeRegressionCE extends RegressionCE {
     }
 
     public Double estimateComplexity(double[] reqArgs) {
-        return regModel.predict(reqArgs);
+        try {
+            System.out.println(String.format("Estimating Complexity for %s with args: ", super.serviceName, reqArgs.toString()));
+            return regModel.predict(reqArgs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0.0;
+        }
     }
 }

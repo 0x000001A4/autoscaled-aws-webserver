@@ -9,12 +9,18 @@ import com.amazonaws.services.cloudwatch.model.*;
 
 import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
+import java.util.List;
+
 public class CloudWatchMetrics {
 
     public static void updateWorkersAvgCPUUtilization() {
+        System.out.println();
         for (Worker worker: WorkersOracle.getWorkers().values()) {
-            worker.setAvgCPUUtilization(fetchAvgCPUUtilization(worker.getId()));
+            double avgCPU = fetchAvgCPUUtilization(worker.getId());
+            System.out.println("Avg CPU: " + avgCPU);
+            worker.setAvgCPUUtilization(avgCPU);
         }
+        System.out.println();
     }
 
     public static double fetchAvgCPUUtilization(String instanceId) {
@@ -33,11 +39,17 @@ public class CloudWatchMetrics {
             .withStatistics(Statistic.Average);
 
         GetMetricStatisticsResult res = cw.getMetricStatistics(request);
+        System.out.println("GetMetricStatisticsResult: " + res.toString());
 
         double totalCPUUtilization = 0.0;
-        for (Datapoint dp : res.getDatapoints()) {
-            totalCPUUtilization += dp.getAverage();
-        }
-        return totalCPUUtilization / res.getDatapoints().size();
+        List<Datapoint> datapoints = res.getDatapoints();
+        if (datapoints.size() > 0) {
+            System.out.println(String.format("Datapoints for instance %s : %s", instanceId, datapoints.toString()));
+            for (Datapoint dp : datapoints) {
+                totalCPUUtilization += dp.getAverage();
+            }
+            totalCPUUtilization = totalCPUUtilization / datapoints.size();
+        } 
+        return totalCPUUtilization;
     }
 }

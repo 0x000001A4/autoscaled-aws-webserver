@@ -176,7 +176,7 @@ public class WorkersOracle {
                 + workers.toString()
             ));
         }
-        Worker worker = complexity.equals(null) ? roundRobin(prevWorker) : getTopWorker();
+        Worker worker = complexity.equals(0.0) ? roundRobin(prevWorker) : getTopWorker();
         LoadBalancerHandler.setPrevWorker(worker);
         return worker;
     }

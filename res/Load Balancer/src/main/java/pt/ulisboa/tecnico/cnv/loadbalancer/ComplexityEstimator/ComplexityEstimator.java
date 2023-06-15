@@ -50,6 +50,7 @@ public class ComplexityEstimator {
             switch (requestURI.getPath()) {
                 case "/compressimage": {
                     Map<String, String> requestFeatures = getImgCompressionFeatures(body);
+                    System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
                         ImageCompressionCE.estimateComplexity(requestFeatures),
                         requestFeatures
@@ -57,6 +58,7 @@ public class ComplexityEstimator {
                 }
                 case "/simulate": {
                     Map<String, String> requestFeatures = getReqFeatures(requestURI);
+                    System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
                         FoxRabbitCE.estimateComplexity(requestFeatures),
                         requestFeatures
@@ -64,8 +66,9 @@ public class ComplexityEstimator {
                 }
                 case "/insectwar": {
                     Map<String, String> requestFeatures = getReqFeatures(requestURI);
+                    System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
-                        FoxRabbitCE.estimateComplexity(requestFeatures),
+                        InsectWarsCE.estimateComplexity(requestFeatures),
                         requestFeatures
                     );
                 }
@@ -74,7 +77,7 @@ public class ComplexityEstimator {
                     return null;
             }
         } catch (Exception e) {
-            System.out.println("Failed to estimate complexity. Falling into round robin");
+            System.out.println("Failed to estimate request complexity");
             e.printStackTrace();
             return null;
         }

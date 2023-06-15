@@ -24,19 +24,19 @@ public class AwsLambdaClient {
     }
 
     public static String getImageCompressionJson(Map<String, String> args) {
-        return String.format("{ image-size: %s, target-format: %s, compression-factor: %s }",
+        return String.format("{ \"image-size\": %s, \"target-format\": %s, \"compression-factor\": %s }",
             args.get("image-size"), args.get("target-format"), args.get("compression-factor")
         );
     }
 
     public static String getFoxesAndRabbitsJson(Map<String, String> args) {
-        return String.format("{ world: %s, scenario, %s, generations: %s }",
+        return String.format("{ \"world\": %s, \"scenario\", %s, \"generations\": %s }",
             args.get("world"), args.get("scenario"), args.get("generations")
         );
     }
 
     public static String getInsectWarsJson(Map<String, String> args) {
-        return String.format("{ max: %s, army1: %s, army2: %s }",
+        return String.format("{ \"max\": %s, \"army1\": %s, \"army2\": %s }",
             args.get("max"), args.get("army1"), args.get("army2")
         );
     }

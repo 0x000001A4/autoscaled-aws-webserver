@@ -30,8 +30,9 @@ public class FoxRabbitCE {
         }
 
         for (int i = 0; i < features.size(); i++) {
-            String key = features.get(i).getKey();
-            regEstimators.putIfAbsent(key, new RidgeRegressionCE(String.format("foxrabbit-%s", key)));
+            String key = String.format("foxrabbit-%s", features.get(i).getKey());
+            System.out.println(String.format("Updating/Creating %s", key));
+            regEstimators.putIfAbsent(key, new RidgeRegressionCE(key));
             regEstimators.get(key).addDataToModel(
                 complexities.get(i),
                 Arrays.asList(features.get(i).getValue())
@@ -43,9 +44,15 @@ public class FoxRabbitCE {
     }
 
     public static double estimateComplexity(Map<String, String> reqFeatures) {
-        RegressionCE regEstimator = regEstimators.get(reqFeatures.get("world") + reqFeatures.get("scenario"));
-        return regEstimator.estimateComplexity(new double[]
-            { Double.parseDouble(reqFeatures.get("generations")) }
-        );
+        try {
+            String key = String.format("foxrabbit-%s", reqFeatures.get("world")+reqFeatures.get("scenario"));
+            String generations = reqFeatures.get("generations");
+            RegressionCE regEstimator = regEstimators.get(key);
+            System.out.println(String.format("Estimating complexity for %s with generations: %s", key, generations));
+            return regEstimator.estimateComplexity(new double[] { Double.parseDouble(generations) });
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0.0;
+        }
     }
 }
