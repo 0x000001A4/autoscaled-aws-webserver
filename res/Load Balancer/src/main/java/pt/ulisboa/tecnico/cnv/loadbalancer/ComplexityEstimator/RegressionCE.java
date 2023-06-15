@@ -8,6 +8,11 @@ public abstract class RegressionCE {
 
     protected List<Double> accComplexities = new ArrayList<>();
     protected List<List<Double>> accFeatures = new ArrayList<>();
+    protected String serviceName;
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
 
     public void clearModelData() {
         accComplexities.clear();

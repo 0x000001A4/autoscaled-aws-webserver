@@ -1,6 +1,5 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +9,10 @@ public class LinearRegressionCE extends RegressionCE {
 
     protected OLSMultipleLinearRegression regModel = new OLSMultipleLinearRegression();
     private double[] regParameters;
+
+    public LinearRegressionCE(String serviceName) {
+        super.serviceName = serviceName;
+    }
 
     public double[] getParameters() {
         return regParameters;

@@ -3,7 +3,6 @@ package pt.ulisboa.tecnico.cnv.loadbalancer;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.sun.net.httpserver.HttpServer;

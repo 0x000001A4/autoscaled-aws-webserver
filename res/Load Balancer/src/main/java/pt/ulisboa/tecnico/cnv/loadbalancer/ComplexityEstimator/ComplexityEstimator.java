@@ -3,6 +3,8 @@ package pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
 
 public class ComplexityEstimator {
 
@@ -43,23 +45,38 @@ public class ComplexityEstimator {
         return features;
     }
 
-    public static Double estimateRequestComplexity(URI requestURI, String body) {
+    public static Entry<Double,Map<String,String>> unfoldRequest(URI requestURI, String body) {
         try {
             switch (requestURI.getPath()) {
-                case "/compressimage":
-                    return ImageCompressionCE.estimateComplexity(getImgCompressionFeatures(body));
-                case "/simulate":
-                    return FoxRabbitCE.estimateComplexity(getReqFeatures(requestURI));
-                case "/insectwar":
-                    return InsectWarsCE.estimateComplexity(getReqFeatures(requestURI));
+                case "/compressimage": {
+                    Map<String, String> requestFeatures = getImgCompressionFeatures(body);
+                    return new SimpleEntry<Double, Map<String,String>>(
+                        ImageCompressionCE.estimateComplexity(requestFeatures),
+                        requestFeatures
+                    );
+                }
+                case "/simulate": {
+                    Map<String, String> requestFeatures = getReqFeatures(requestURI);
+                    return new SimpleEntry<Double, Map<String,String>>(
+                        FoxRabbitCE.estimateComplexity(requestFeatures),
+                        requestFeatures
+                    );
+                }
+                case "/insectwar": {
+                    Map<String, String> requestFeatures = getReqFeatures(requestURI);
+                    return new SimpleEntry<Double, Map<String,String>>(
+                        FoxRabbitCE.estimateComplexity(requestFeatures),
+                        requestFeatures
+                    );
+                }
                 default:
                     System.out.println("Error: No service with this path");
-                    return 0.0;
+                    return null;
             }
         } catch (Exception e) {
             System.out.println("Failed to estimate complexity. Falling into round robin");
             e.printStackTrace();
-            return 0.0;
+            return null;
         }
     }
 

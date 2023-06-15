@@ -27,9 +27,9 @@ public class CloudWatchMetrics {
                         .withName("InstanceId")
                         .withValue(instanceId)
                         )
-            .withStartTime(new Date(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(60)))
+            .withStartTime(new Date(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(120)))
             .withEndTime(new Date())
-            .withPeriod(10)
+            .withPeriod(60)
             .withStatistics(Statistic.Average);
 
         GetMetricStatisticsResult res = cw.getMetricStatistics(request);

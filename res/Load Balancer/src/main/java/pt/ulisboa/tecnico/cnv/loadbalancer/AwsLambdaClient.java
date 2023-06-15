@@ -7,9 +7,10 @@ import com.amazonaws.services.lambda.model.InvokeRequest;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import com.amazonaws.services.lambda.model.InvokeResult;
 import com.amazonaws.services.lambda.model.AWSLambdaException;
 
+
+import java.util.Map;
 
 public class AwsLambdaClient {
 
@@ -22,31 +23,31 @@ public class AwsLambdaClient {
                             .build();
     }
 
-    public static String getImageCompressionJson(Object[] args) {
+    public static String getImageCompressionJson(Map<String, String> args) {
         return String.format("{ image-size: %s, target-format: %s, compression-factor: %s }",
-            ((Integer)args[0]).toString(), (String)args[1], ((Float)args[2]).toString()
+            args.get("image-size"), args.get("target-format"), args.get("compression-factor")
         );
     }
 
-    public static String getFoxesAndRabbitsJson(Object[] args) {
+    public static String getFoxesAndRabbitsJson(Map<String, String> args) {
         return String.format("{ world: %s, scenario, %s, generations: %s }",
-            ((Integer)args[0]).toString(), ((Integer)args[1]).toString(), ((Integer)args[2]).toString()
+            args.get("world"), args.get("scenario"), args.get("generations")
         );
     }
 
-    public static String getInsectWarsJson(Object[] args) {
+    public static String getInsectWarsJson(Map<String, String> args) {
         return String.format("{ max: %s, army1: %s, army2: %s }",
-            ((Integer)args[0]).toString(), ((Integer)args[1]).toString(), ((Integer)args[2]).toString()
+            args.get("max"), args.get("army1"), args.get("army2")
         );
     }
 
-    public static String getJSONFromArgs(String lambdaName, Object[] args) {
+    public static String getJSONFromArgs(String lambdaName, Map<String, String> args) {
         switch (lambdaName) {
-            case "image-compression-lambda":
+            case "compressimage-lambda":
                 return getImageCompressionJson(args);
-            case "foxes-and-rabbits-lambda":
+            case "foxrabbit-lambda":
                 return getFoxesAndRabbitsJson(args);
-            case "insect-wars-lambda":
+            case "insectwar-lambda":
                 return getInsectWarsJson(args);
             default:
                 System.out.println("Incorrect lambda name");
@@ -54,22 +55,23 @@ public class AwsLambdaClient {
         }
     }
 
-	public static void invokeLambda(String lambdaName, Object[] args) {
+	public static byte[] invokeLambda(String lambdaName, Map<String, String> reqArgs) {
        try {
-           String json = getJSONFromArgs(lambdaName, args);
+           String json = getJSONFromArgs(lambdaName, reqArgs);
            ByteBuffer payload = ByteBuffer.wrap(json.getBytes(StandardCharsets.UTF_8)) ;
 
            InvokeRequest request = new InvokeRequest()
                                     .withFunctionName(lambdaName)
                                     .withPayload(payload);
 
-           InvokeResult res = awsLambdaClient.invoke(request);
-           String value = StandardCharsets.UTF_8.decode(res.getPayload()).toString();
-           System.out.println(value);
+           return awsLambdaClient.invoke(request)
+                    .getPayload()
+                    .array();
 
        } catch(AWSLambdaException e) {
            System.err.println(e.getMessage());
            System.exit(1);
+           return null;
        }
    }
 }

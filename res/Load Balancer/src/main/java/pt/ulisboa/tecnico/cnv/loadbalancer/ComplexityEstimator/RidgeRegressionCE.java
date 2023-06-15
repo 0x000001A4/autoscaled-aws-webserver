@@ -11,6 +11,10 @@ public class RidgeRegressionCE extends RegressionCE {
     protected RidgeRegression regModel;
     private final double lambda = 0.1;
 
+    public RidgeRegressionCE(String _serviceName) {
+        super.serviceName = _serviceName;
+    }
+
     public void clearModelData() {
         accComplexities.clear();
         accFeatures.clear();
@@ -48,27 +52,41 @@ public class RidgeRegressionCE extends RegressionCE {
 
         double[] y = complexities.stream().mapToDouble(Double::doubleValue).toArray();
 
+        System.out.println(String.format("*\nUpdating parameters in service: %s  and listing parameters:", super.serviceName));
+        System.out.println(String.format("%s model Features: %s", super.serviceName, features.toString()));
+        System.out.println(String.format("%s model Complexities: %s", super.serviceName, complexities.toString()));
+        System.out.println("*");
+
         regModel = new RidgeRegression(x, y, lambda);
     }
 
     public void updateParameters() {
 
         if (accComplexities.size() <= 1 || accFeatures.size() <= 1) {
+            System.out.println(String.format("Error updating parameters in service: %s", super.serviceName));
             System.out.println("Not enough data points for Ridge Regression");
             return;
         }
 
         // Check that the number of features doesn't exceed 2.
         if (accFeatures.stream().anyMatch(feature -> feature.size() > 2)) {
+            System.out.println(String.format("Error updating parameters in service: %s", super.serviceName));
             System.out.println("Too many features for Ridge Regression");
             return;
         }
 
         // Check that the number of data points matches the number of targets.
         if (accComplexities.size() != accFeatures.size()) {
+            System.out.println(String.format("Error updating parameters in service: %s", super.serviceName));
             System.out.println("Mismatch between number of data points and targets for Ridge Regression");
             return;
         }
+
+        System.out.println(String.format("*\nUpdating parameters in service: %s  and listing parameters:", super.serviceName));
+        System.out.println(String.format("%s model Features: %s", super.serviceName, accFeatures.toString()));
+        System.out.println(String.format("%s model Complexities: %s", super.serviceName, accComplexities.toString()));
+        System.out.println("*");
+
 
         double[][] x = accFeatures
             .stream()

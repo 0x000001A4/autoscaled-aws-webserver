@@ -24,8 +24,6 @@ public class FoxRabbitCE {
     }
 
     public static void updateRegParameters(List<Double> complexities, List<Entry<String, Double>> features) {
-        System.out.println(complexities.toString());
-        System.out.println(features.toString());
 
         for (RegressionCE regEstimator: regEstimators.values()) {
             regEstimator.clearModelData();
@@ -33,7 +31,7 @@ public class FoxRabbitCE {
 
         for (int i = 0; i < features.size(); i++) {
             String key = features.get(i).getKey();
-            regEstimators.putIfAbsent(key, new RidgeRegressionCE());
+            regEstimators.putIfAbsent(key, new RidgeRegressionCE(String.format("foxrabbit-%s", key)));
             regEstimators.get(key).addDataToModel(
                 complexities.get(i),
                 Arrays.asList(features.get(i).getValue())

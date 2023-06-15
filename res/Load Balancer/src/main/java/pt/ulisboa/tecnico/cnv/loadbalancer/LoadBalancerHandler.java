@@ -1,6 +1,8 @@
 package pt.ulisboa.tecnico.cnv.loadbalancer;
 
 import java.io.IOException;
+import java.io.InputStream;
+
 import com.sun.net.httpserver.HttpHandler;
 
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimator;
@@ -11,6 +13,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.net.http.HttpRequest;
 
 import java.io.BufferedReader;
@@ -21,48 +25,88 @@ import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class LoadBalancerHandler implements HttpHandler {
 
-    private Worker prevWorker = null;
+    private static Worker prevWorker = null;
 
-    private HttpResponse<byte[]> forward(HttpExchange he) {
+    public static void setPrevWorker(Worker worker) {
+        prevWorker = worker;
+    }
+
+    private String readRequestBody(InputStream reqBody) {
         try {
-            // Read request body
             StringBuilder bodyBuilder = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(he.getRequestBody()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(reqBody));
             String line;
             while ((line = reader.readLine()) != null) {
                 bodyBuilder.append(line);
             }
-            String body = bodyBuilder.toString();
-            URI reqURI = he.getRequestURI();
+            return bodyBuilder.toString();
 
-            System.out.println("Got request " + reqURI + " with body : ...");
-
-            Double complexity = ComplexityEstimator.estimateRequestComplexity(reqURI, body);
-            System.out.println("Estimated complexity: " + complexity);
-            Worker worker = complexity.equals(0.0) ? WorkersOracle.roundRobin(prevWorker) : WorkersOracle.getTopWorker();
-            prevWorker = worker;
-            System.out.println(worker.toString());
-            URI newURI = new URI("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + reqURI.toString());
-
-            System.out.println("Forwarding request to " + newURI);
-
-            // Build new request
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .uri(newURI)
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-            // Forward request (Send the new request)
-            worker.loadWork(complexity);
-            HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
-            worker.unloadWork(complexity);
-            return res;
-
-        } catch (Exception e) {
-            /* TODO: Forward to some other server in case of failure */
+        } catch (IOException e) {
+            System.out.println("Error reading request body");
             e.printStackTrace();
-            return null;
+            return "";
+        }
+    }
+
+    private HttpResponse<byte[]> forwardRequestToWorker(Worker worker, HttpRequest httpRequest, Double complexity)
+        throws IOException, InterruptedException {
+
+        worker.loadWork(complexity);
+        HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+        worker.unloadWork(complexity);
+        return res;
+    }
+
+    private byte[] forward(HttpExchange he) {
+        // Read request body
+        URI reqURI = he.getRequestURI();
+        String body = readRequestBody(he.getRequestBody());
+        System.out.println("Got request " + reqURI + " with body : ...");
+
+        // Get request complexity and respective arguments (that can be in header/body)
+        Entry<Double, Map<String,String>> reqInfo = ComplexityEstimator.unfoldRequest(reqURI, body);
+        Double complexity = reqInfo.getKey();
+        Map<String, String> reqArgs = reqInfo.getValue();
+        System.out.println("Request info: " + reqInfo.toString());
+
+        /* Here we try to find the best Worker to handle a request.
+        
+            -> In case there is no worker with enough resources to 
+            handle a request (NoAvailableWorkerException) we issue 
+            Lambdas while we launch another worker.
+        
+            -> In case there is a problem handling the request and
+            another exception is catched in this attempt to forward
+            the request should be forwarded to some other worker.
+        */
+        while (true) {
+            try {
+                Worker worker = WorkersOracle.findNextWorkerToHandleRequest(prevWorker, complexity);
+    
+                URI newURI = new URI("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + reqURI.toString());
+                System.out.println("Forwarding request to " + newURI);
+                System.out.println("Worker handling request: " + worker.toString());
+    
+                // Build and Forward request
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .uri(newURI)
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+                return forwardRequestToWorker(worker, httpRequest, complexity).body();
+    
+            } catch (NoAvailableWorkerException e) {
+                /* Launch AWS Lambda in case there is no worker available to handle request */
+                String lambdaName = String.format("%s-lambda", reqURI.getPath()).substring(1);
+                System.out.println(String.format("Invoking lambda  %s  with args: %s ", lambdaName, reqArgs.toString()));
+                return AwsLambdaClient.invokeLambda(lambdaName, reqArgs);
+    
+            } catch (Exception e) {
+                /* Forward to some other server in case of failure on forward of request */
+                System.out.println(String.format("Failed forwarding request to worker: %s. \n Retrying...", prevWorker.toString()));
+                e.printStackTrace();
+            }
         }
     }
 
@@ -78,7 +122,7 @@ public class LoadBalancerHandler implements HttpHandler {
                 return;
             }
             he.sendResponseHeaders(200, 0);
-            he.getResponseBody().write(forward(he).body());
+            he.getResponseBody().write(forward(he));
             he.getResponseBody().flush();
             he.getResponseBody().close();
 

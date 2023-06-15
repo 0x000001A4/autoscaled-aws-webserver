@@ -6,6 +6,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
@@ -48,11 +49,12 @@ public class WorkersOracle {
         }
     }
 
+
     public static void init(ExecutorService threadPool) {
         threadPool.execute(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    TimeUnit.SECONDS.sleep(40);
+                    TimeUnit.SECONDS.sleep(30);
                     if (LoadBalancer.getStatus().equals(LoadBalancer.LoadBalancerStatus.STATUS_ON)) {
                         queryDBTask.run();
                     }
@@ -79,15 +81,12 @@ public class WorkersOracle {
     }
 
     public static void updateLBWithInstrumentationMetrics() {
-        System.out.println("Entering method to update LB with Instrumentation metrics");
+        System.out.println("\n\nEntering method to update LB with Instrumentation metrics");
         for (String serviceName: workerServiceNames) {
             List<Map<String, AttributeValue>> metrics = DynamoClient.queryDynamoDB(serviceName);
-            List<Double> complexities = new ArrayList<>();
-
             switch (serviceName) {
                 case "compression": {
                     Map<List<Double>, Double> featuresComplexities = new HashMap<>();
-
                     for (Map<String, AttributeValue> record: metrics) {
                         featuresComplexities.put(Arrays.asList(
                             Double.parseDouble(record.get("image-size").getN()),
@@ -97,13 +96,11 @@ public class WorkersOracle {
                     }
 
                     ImageCompressionCE.updateRegParameters(featuresComplexities);
-
                     break;
                 }
 
                 case "foxrabbit": {
                     Map<Entry<String, Double>, Double> featuresComplexities = new HashMap<>();
-
                     for (Map<String, AttributeValue> record: metrics) {
                         featuresComplexities.put(new SimpleEntry<String, Double>(
                             record.get("world").getN()+record.get("scenario").getN(),
@@ -112,13 +109,11 @@ public class WorkersOracle {
                     }
 
                     FoxRabbitCE.updateRegParameters(featuresComplexities);
-
                     break;
                 }
 
                 case "insectwar": {
                     Map<List<Double>, Double> featuresComplexities = new HashMap<>();
-
                     for (Map<String, AttributeValue> record: metrics) {
                         featuresComplexities.put(Arrays.asList(
                             Double.parseDouble(record.get("max").getN()),
@@ -129,7 +124,6 @@ public class WorkersOracle {
                     }
 
                     InsectWarsCE.updateRegParameters(featuresComplexities);
-
                     break;
                 }
             }
@@ -167,5 +161,23 @@ public class WorkersOracle {
         } else {
             return _workers.get(0);
         }
+    }
+
+    public static Worker findNextWorkerToHandleRequest(Worker prevWorker, Double complexity) 
+        throws NoAvailableWorkerException {
+
+        if (workers.values().stream()
+            .filter(worker -> CPUFilter(worker.getId(), complexity))
+            .collect(Collectors.toList())
+            .size() == 0) {
+            throw new NoAvailableWorkerException(String.format(
+                "There is no Available Worker to handle this request\n"
+                + "Workers list:\n"
+                + workers.toString()
+            ));
+        }
+        Worker worker = complexity.equals(null) ? roundRobin(prevWorker) : getTopWorker();
+        LoadBalancerHandler.setPrevWorker(worker);
+        return worker;
     }
 }

@@ -16,7 +16,7 @@ aws iam attach-role-policy \
 sleep 5
 
 aws lambda create-function \
-	--function-name image-compression-lambda \
+	--function-name compressimage-lambda \
 	--zip-file fileb://../res/"Image Compression"/target/compression-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
 	--handler pt.ulisboa.tecnico.cnv.compression.BaseCompressingHandler \
 	--runtime java11 \
@@ -27,7 +27,7 @@ aws lambda create-function \
 sleep 5
 
 aws lambda create-function \
-	--function-name foxes-and-rabbits-lambda \
+	--function-name foxrabbit-lambda \
 	--zip-file fileb://../res/"Foxes and Rabbits"/target/foxrabbit-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
 	--handler pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler \
 	--runtime java11 \
@@ -38,7 +38,7 @@ aws lambda create-function \
 sleep 5
 
 aws lambda create-function \
-	--function-name insect-wars-lambda \
+	--function-name insectwar-lambda \
 	--zip-file fileb://../res/"Insect Wars"/target/insectwar-1.0.0-SNAPSHOT-jar-with-dependencies.jar \
 	--handler pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler \
 	--runtime java11 \
