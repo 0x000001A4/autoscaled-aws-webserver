@@ -95,6 +95,21 @@ public class RidgeRegressionCE extends RegressionCE {
 
         double[] y = accComplexities.stream().mapToDouble(Double::doubleValue).toArray();
 
+        /*
+        System.out.println();
+        for (double[] arr_x: x) {
+            for (double el: arr_x) {
+                System.out.print(el+" ");
+            }
+            System.out.println();
+        }
+
+        for (double el: y) {
+            System.out.println(el);
+        }
+        System.out.println();
+        */
+
         regModel = new RidgeRegression(x, y, lambda);
     }
 

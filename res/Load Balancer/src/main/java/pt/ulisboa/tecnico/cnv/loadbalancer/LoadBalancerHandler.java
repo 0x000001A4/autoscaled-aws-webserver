@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import com.sun.net.httpserver.HttpHandler;
 
+import javassist.bytecode.ByteArray;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimator;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -63,8 +64,14 @@ public class LoadBalancerHandler implements HttpHandler {
         String body = readRequestBody(he.getRequestBody());
         System.out.println("Got request " + reqURI + " with body : ...");
 
+        Entry<Double, Map<String,String>> reqInfo;
         // Get request complexity and respective arguments (that can be in header/body)
-        Entry<Double, Map<String,String>> reqInfo = ComplexityEstimator.unfoldRequest(reqURI, body);
+        try {
+            reqInfo = ComplexityEstimator.unfoldRequest(reqURI, body);
+        } catch (InvalidArgumentException e) {
+            /* In case arguments are not correct do not forward request */
+            return new byte[]{};
+        }        
         Double complexity = reqInfo.getKey();
         Map<String, String> reqArgs = reqInfo.getValue();
         System.out.println("Request info: " + reqInfo.toString());
@@ -100,6 +107,7 @@ public class LoadBalancerHandler implements HttpHandler {
                 /* Launch AWS Lambda in case there is no worker available to handle request */
                 String lambdaName = String.format("%s-lambda", reqURI.getPath()).substring(1);
                 System.out.println(String.format("Invoking lambda  %s  with args: %s ", lambdaName, reqArgs.toString()));
+                Autoscaler.updateActiveWorkers();
                 return AwsLambdaClient.invokeLambda(lambdaName, reqArgs);
     
             } catch (Exception e) {

@@ -6,10 +6,12 @@ import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 
+import pt.ulisboa.tecnico.cnv.loadbalancer.InvalidArgumentException;
+
 public class ComplexityEstimator {
 
-    public static Map<String, String> getReqFeatures(URI requestURI) {
-        String query = requestURI.getQuery(); // "max=1&army1=10&army2=10"
+    public static Map<String,String> getReqFeatures(URI requestURI) {
+        String query = requestURI.getQuery();
         Map<String, String> features = new HashMap<>();
         String[] pairs = query.split("&");
         for (String pair : pairs) {
@@ -19,7 +21,39 @@ public class ComplexityEstimator {
         return features;
     }
 
-    public static Map<String, String> getImgCompressionFeatures(String body) {
+    public static Map<String, String> getInsectWarFeatures(URI requestURI) throws InvalidArgumentException {
+        Map<String, String> features = getReqFeatures(requestURI);
+        try {
+            Integer max = Integer.parseInt(features.get("max"));
+            Integer army1 = Integer.parseInt(features.get("army1"));
+            Integer army2 = Integer.parseInt(features.get("army2"));
+            if (features.size() == 3 && army1 >= 0 && army2 >= 0 && max >= 1)
+                return features;
+        } catch (Exception e) {}
+        throw new InvalidArgumentException(String.format(
+            "InvalidArgumentException in insect war. Features: %s", features.toString()
+        ));
+    }
+
+
+    public static Map<String, String> getFoxRabbitFeatures(URI requestURI) throws InvalidArgumentException {
+        Map<String, String> features = getReqFeatures(requestURI);
+        try {
+            Integer world = Integer.parseInt(features.get("world"));
+            Integer scenario = Integer.parseInt(features.get("scenario"));
+            Integer generations = Integer.parseInt(features.get("generations"));
+            if (features.size() == 3 && 
+                world >= 1 && world <= 4 && 
+                scenario >= 1 && scenario <= 3 &&
+                generations > 0)
+                return features;
+        } catch (Exception e) {}
+        throw new InvalidArgumentException(String.format(
+            "InvalidArgumentException in fox rabbit. Features: %s", features.toString()
+        ));
+    }
+
+    public static Map<String, String> getImgCompressionFeatures(String body) throws InvalidArgumentException {
         Map<String, String> features = new HashMap<>();
         String[] entries = body.split(";");
         for (String entry: entries) {
@@ -42,10 +76,17 @@ public class ComplexityEstimator {
                 }
             }
         }
-        return features;
+        try {
+            Double cf = Double.parseDouble(features.get("compression-factor"));
+            if (features.size() == 2 && features.containsKey("image-size") && cf >= 0 && cf <= 1)
+                return features;
+        } catch (Exception e) {}
+        throw new InvalidArgumentException(String.format(
+            "InvalidArgumentException in image compression. Features: %s", features.toString()
+        ));
     }
 
-    public static Entry<Double,Map<String,String>> unfoldRequest(URI requestURI, String body) {
+    public static Entry<Double,Map<String,String>> unfoldRequest(URI requestURI, String body) throws InvalidArgumentException {
         try {
             switch (requestURI.getPath()) {
                 case "/compressimage": {
@@ -57,7 +98,7 @@ public class ComplexityEstimator {
                     );
                 }
                 case "/simulate": {
-                    Map<String, String> requestFeatures = getReqFeatures(requestURI);
+                    Map<String, String> requestFeatures = getFoxRabbitFeatures(requestURI);
                     System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
                         FoxRabbitCE.estimateComplexity(requestFeatures),
