@@ -120,7 +120,8 @@ public class Autoscaler {
                                 .withMinCount(1)
                                 .withMaxCount(1)
                                 .withKeyName(KEY_NAME)
-                                .withSecurityGroupIds(SEC_GROUP_ID);
+                                .withSecurityGroupIds(SEC_GROUP_ID)
+                                .withMonitoring(true);
 
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
