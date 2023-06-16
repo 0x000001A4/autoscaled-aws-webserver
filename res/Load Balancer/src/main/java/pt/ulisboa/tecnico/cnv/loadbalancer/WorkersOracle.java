@@ -20,6 +20,7 @@ import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimat
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.FoxRabbitCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ImageCompressionCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.InsectWarsCE;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Autoscaling.Autoscaler;
 import pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions.NoAvailableWorkerException;
 import pt.ulisboa.tecnico.cnv.webserver.Worker;
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
@@ -147,7 +148,7 @@ public class WorkersOracle {
     }
 
     public static boolean CPUFilter(String instanceId, Double complexity) {
-        return workers.get(instanceId).getAvgCPUUtilization() < 0.75;
+        return workers.get(instanceId).getAvgCPUUtilization() < Autoscaler.MAX_AVG_CPU_UTILIZATION;
     }
 
     public static Worker getTopWorker() {
@@ -189,8 +190,6 @@ public class WorkersOracle {
         return workers.values().stream()
             .filter(worker -> CPUFilter(worker.getId(), complexity))
             .collect(Collectors.toList())
-            .size() == 0
-            ||
-            complexity < ComplexityEstimator.MIN_COMPLEXITY_FOR_LAMBDA_INVOCATION;
+            .size() == 0;
     }
 }

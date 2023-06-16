@@ -72,6 +72,7 @@ public class LoadBalancerHandler implements HttpHandler {
         try {
             reqInfo = ComplexityEstimator.unfoldRequest(reqURI, body);
         } catch (InvalidArgumentException e) {
+            System.out.println("Problem unfolding request");
             /* In case arguments are not correct do not forward request */
             return new byte[]{};
         }        

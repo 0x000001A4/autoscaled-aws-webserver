@@ -47,8 +47,8 @@ public class Autoscaler {
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
 
     // Policies
-    private static double MIN_AVG_CPU_UTILIZATION = 25.0;
-    private static double MAX_AVG_CPU_UTILIZATION = 75.0;
+    public static double MIN_AVG_CPU_UTILIZATION = 25.0;
+    public static double MAX_AVG_CPU_UTILIZATION = 75.0;
 
     public static String GET_AMI_ID() {
         try {
