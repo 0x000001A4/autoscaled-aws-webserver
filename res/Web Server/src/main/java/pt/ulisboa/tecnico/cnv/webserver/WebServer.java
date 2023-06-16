@@ -137,15 +137,12 @@ public class WebServer {
                 Process process = processBuilder.start(); /* Takes 10 seconds */
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println("CPU Usage: " + line);
-                }
-
+                String avgcpu = reader.readLine();
+                System.out.println("CPU Usage: " + avgcpu);
                 
                 // Build and Forward request
                 URI newURI = new URI("http://" + autoscalerPrivateIpAddress + ":" + 8000 + "/cputracker" +
-                    String.format("?instanceId=%s&avgcpu=%s", instanceId, line)
+                    String.format("?instanceId=%s&avgcpu=%s", instanceId, avgcpu)
                 );
                 System.out.println("Sending new request with uri: "+ newURI.toString());
                 HttpRequest httpRequest = HttpRequest.newBuilder()
