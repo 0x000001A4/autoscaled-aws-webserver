@@ -23,6 +23,7 @@ public class ImageCompressionCE {
         return regEstimator.estimateComplexity(reqFeatures
                 .keySet()
                 .stream()
+                .filter(key -> key.equals("compression-factor") || key.equals("image-size"))
                 .mapToDouble(arg -> Double.parseDouble(reqFeatures.get(arg)))
                 .toArray()
         );

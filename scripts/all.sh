@@ -83,6 +83,9 @@ then
 fi
 
 
+# Step 2.5: Register lambdas
+./register-lambdas.sh
+
 # Step 3: install software in the VM instance.
 cmd="set -v" # It can be empty, but it must be something.
 

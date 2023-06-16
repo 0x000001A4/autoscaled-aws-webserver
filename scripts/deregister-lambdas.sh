@@ -5,7 +5,7 @@ source $SCRIPT_DIR/config.sh
 
 aws lambda delete-function --function-name compressimage-lambda
 
-aws lambda delete-function --function-name foxrabbit-lambda
+aws lambda delete-function --function-name simulate-lambda
 
 aws lambda delete-function --function-name insectwar-lambda
 

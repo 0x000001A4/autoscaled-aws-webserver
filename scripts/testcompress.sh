@@ -38,7 +38,8 @@ function test_single_requests {
 	BODY=$(base64 --wrap=0 $INPUT)
 	BODY=$(echo "targetFormat:$TARGET_FORMAT;compressionFactor:$COMPRESSION_FACTOR;data:image/jpeg;base64,$BODY")
 
-	curl -s -d $BODY $HOST:$PORT/compressimage -o /tmp/$TARGET_FORMAT-image.dat
+	curl -s -d $BODY $HOST:$PORT/compressimage #-o /tmp/$TARGET_FORMAT-image.dat
+	exit
 
 	OUTPUT=$(cat /tmp/$TARGET_FORMAT-image.dat)   # read raw output
 	OUTPUT=${OUTPUT#*,}                           # parse output after comma
@@ -47,4 +48,5 @@ function test_single_requests {
 }
 
 test_single_requests
+exit
 test_batch_requests

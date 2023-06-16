@@ -77,15 +77,35 @@ public class ComplexityEstimator {
                     default:
                         break;
                 }
+            } else {
+                kvPair = entry.split(",");
+                if (kvPair.length == 2) {
+                    String key = kvPair[0].trim();
+                    String value = kvPair[1].trim();
+                    switch (key) {
+                        case "base64":
+                            features.put("image-size", String.valueOf(value.length()));
+                            features.put("image", value);
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+                    System.out.println("kvPair not 2, printing:");
+                    for (String kv : kvPair) {
+                        System.out.println(kv);
+                    }
+                }
             }
         }
         try {
             Double cf = Double.parseDouble(features.get("compression-factor"));
-            if (features.size() == 2 && features.containsKey("image-size") && cf >= 0 && cf <= 1)
+            if (features.size() == 4 && features.containsKey("image-size") 
+                && features.containsKey("image") && cf >= 0 && cf <= 1)
                 return features;
         } catch (Exception e) {}
         throw new InvalidArgumentException(String.format(
-            "InvalidArgumentException in image compression. Features: %s", features.toString()
+            "InvalidArgumentException in image compression. Features: %s", features
         ));
     }
 

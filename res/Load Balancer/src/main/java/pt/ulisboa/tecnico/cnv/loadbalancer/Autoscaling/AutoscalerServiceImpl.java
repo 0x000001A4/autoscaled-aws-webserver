@@ -35,7 +35,9 @@ public class AutoscalerServiceImpl implements HttpHandler {
             String instanceId = parameters.get("instanceId");
             Double avgCPU = Double.parseDouble(parameters.get("avgcpu"));
             WorkersOracle.updateWorkerAvgCPU(instanceId, avgCPU);
-
+            System.out.println("Got request with uri: " + requestedUri + 
+                ", parameters: " + parameters + ", instanceId: " + instanceId + ", avgCPU: " + avgCPU);
+            
             he.sendResponseHeaders(200, 0);
             OutputStream os = he.getResponseBody();
             os.write(new byte[]{});

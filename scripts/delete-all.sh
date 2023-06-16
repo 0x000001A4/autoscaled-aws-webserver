@@ -53,3 +53,6 @@ echo "Done deleting!"
 # Remove all the temporary files
 echo "Removing temporary files..."
 rm instance.id image.id snapshot.id instance.dns
+
+echo "Removing lambdas..."
+./deregister-lambdas.sh

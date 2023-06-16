@@ -5,7 +5,7 @@ import com.amazonaws.services.ec2.model.Instance;
 public class Worker implements Comparable<Worker> {
 
     private String id;
-    private Double load;
+    private Long load;
     private Double avgCPUUtilization;
     private Instance ec2Instance;
 
@@ -13,7 +13,7 @@ public class Worker implements Comparable<Worker> {
         this.id = id;
         this.ec2Instance = ec2Instance;
         this.avgCPUUtilization = 0.0;
-        this.load = 0.0;
+        this.load = 0l;
     }
 
     @Override
@@ -33,12 +33,12 @@ public class Worker implements Comparable<Worker> {
         return id;
     }
 
-    synchronized public void loadWork(Double instrs) {
-        load += instrs;
+    synchronized public void loadWork(Double work) {
+        load += work.longValue();
     }
 
-    synchronized public void unloadWork(Double instrs) {
-        load -= instrs;
+    synchronized public void unloadWork(Double work) {
+        load -= work.longValue();
     }
 
 
@@ -46,7 +46,7 @@ public class Worker implements Comparable<Worker> {
         avgCPUUtilization = avg;
     }
 
-    public Double getLoad() {
+    public Long getLoad() {
         return load;
     }
 

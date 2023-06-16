@@ -34,11 +34,6 @@ public class LoadBalancer {
         server.stop(0);
         threadPool.shutdown();
         autoscalingThread.interrupt();
-        try {
-            threadPool.awaitTermination(15, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            System.out.println("Unexpected behaviour");
-        }
         Autoscaler.terminateAllInstances();
     }
 

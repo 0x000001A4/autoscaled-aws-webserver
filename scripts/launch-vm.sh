@@ -21,7 +21,7 @@ echo "New instance with id $(cat instance.id) is now running."
 aws ec2 describe-instances \
     --instance-id $(cat instance.id) \
     --query "Reservations[0].Instances[0].NetworkInterfaces[0].PrivateIpAddresses[0].Association.PublicDnsName" \
-    --output text > instance.dns
+    --output text | tr -d '\r\n' > instance.dns
 echo "New instance with id $(cat instance.id) has address $(cat instance.dns)."
 
 # Wait for instance to have SSH ready.

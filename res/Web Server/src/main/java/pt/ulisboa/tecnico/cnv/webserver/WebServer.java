@@ -133,6 +133,7 @@ public class WebServer {
     private static void trackAndReportWorkerCPU() {
         while (status.equals(WebServerStatus.STATUS_ON) && !Thread.currentThread().isInterrupted()) {
             try {
+                if (WebServer.settingup) Thread.sleep(5000);
                 ProcessBuilder processBuilder = new ProcessBuilder("/home/ec2-user/cputracker.sh");
                 Process process = processBuilder.start(); /* Takes 10 seconds */
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -144,14 +145,15 @@ public class WebServer {
                 URI newURI = new URI("http://" + autoscalerPrivateIpAddress + ":" + 8000 + "/cputracker" +
                     String.format("?instanceId=%s&avgcpu=%s", instanceId, avgcpu)
                 );
-                System.out.println("Sending new request with uri: "+ newURI.toString());
-                HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
-                    .uri(newURI)
-                    .build();
-
                 
-                if (!WebServer.settingup) HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .uri(newURI)
+                .build();
+                
+                System.out.println("Sending new request with uri: "+ newURI.toString());
+                HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
@@ -189,8 +191,17 @@ public class WebServer {
                 }
             });
         }
-        WebServer.settingup = false;
-        System.out.println("Finished setting up web server");
+        System.out.println("Finished setting up web server, sleeping for 10 seconds");
+        while (true) {
+            try {
+                Thread.sleep(10000);
+                System.out.println("Setting up = false -> CPUAvg should now start being reported");
+                WebServer.settingup = false;
+                break;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
