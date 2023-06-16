@@ -107,8 +107,21 @@ public class Autoscaler {
     }
 
     public static void terminateAllInstances() {
+        List<Thread> threads = new ArrayList<>();
         for (String workerId: WorkersOracle.getWorkers().keySet()) {
-            terminateEC2instance(workerId);
+            Thread t = new Thread(() -> terminateEC2instance(workerId));
+            threads.add(t);
+            t.start();
+        }
+
+        for (Thread t : threads) {
+            try {
+                t.join();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+                continue;
+            }
         }
     }
 
