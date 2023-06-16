@@ -179,11 +179,8 @@ public class WebServer {
             Runnable updateDBTask = DynamoClient::updateDBWithInstrumentationMetrics;
 
             threadPool.execute(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    if (status.equals(WebServerStatus.STATUS_ON)) {
-                        updateDBTask.run();
-                    }
-                    else Thread.currentThread().interrupt();
+                while (!Thread.currentThread().isInterrupted() && status.equals(WebServerStatus.STATUS_ON)) {
+                    updateDBTask.run();
                     try {
                         TimeUnit.SECONDS.sleep(30);
                     } catch (InterruptedException e) {
@@ -193,6 +190,7 @@ public class WebServer {
             });
         }
         WebServer.settingup = false;
+        System.out.println("Finished setting up web server");
     }
 
 
