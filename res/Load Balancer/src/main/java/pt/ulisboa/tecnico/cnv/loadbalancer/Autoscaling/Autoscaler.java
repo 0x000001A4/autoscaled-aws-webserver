@@ -64,11 +64,13 @@ public class Autoscaler {
         launchEC2Instance();
         server.createContext("/cputracker", new AutoscalerServiceImpl());
         autoscalingThread = new Thread(() -> {
+            Integer cnt = 0;
             while (LoadBalancer.getStatus().equals(LoadBalancerStatus.STATUS_ON) &&
                     !Thread.currentThread().isInterrupted()) {
                 try {
                     updateActiveWorkers();
-                    printActiveInstances();
+                    cnt = (cnt + 1) % 10;
+                    if (cnt == 0) printActiveInstances();
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -129,6 +131,47 @@ public class Autoscaler {
         System.out.println();
     }
 
+    private static void completeWorkerRegistration(String workerId, Instance instance) {
+        Worker worker = new Worker(workerId, instance);
+        System.out.println(String.format(
+            "Completing Worker Registration by sending him workerId: %s", workerId));
+
+        String query = String.format("?id=%s", workerId);
+        String url = String.format("http://" + worker.getEC2Instance().getPrivateIpAddress() +
+             ":" + 8000 + "/register" + query);
+
+        URI newURI;
+        try {
+            newURI = new URI(url);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // Build and Forward request
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .uri(newURI)
+                .build();
+                
+        while (true) {
+            try {
+                System.out.println("Sending instance-id to worker in request with url: " + url);
+                HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+                System.out.println(String.format("Got response from Worker Registration of worker: %s with res: %s",
+                    workerId, res.toString()));
+                if (res.statusCode() == 200) {
+                    WorkersOracle.addWorker(worker);
+                    break;
+                }
+                Thread.sleep(5000);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        printActiveInstances();
+    }
+
     public static void launchEC2Instance() {
         try {
             System.out.println("Starting a new instance.");
@@ -143,45 +186,11 @@ public class Autoscaler {
 
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
-
             String workerId = instance.getInstanceId();
 
-            new Thread(() -> {
-                printActiveInstances();
-                waitForInstancesReady(workerId);
-                Worker worker = new Worker(workerId, instance);
-                WorkersOracle.addWorker(worker);
-                printActiveInstances();
-
-                String query = "?id=" + workerId;
-                String url = String.format("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + "/register%s",
-                        query
-                );
-
-                URI newURI;
-                try {
-                    newURI = new URI(url);
-                } catch (URISyntaxException e) {
-                    e.printStackTrace();
-                    return;
-                }
-                System.out.println("Sending instance-id to worker: " + url);
-
-                // Build and Forward request
-                HttpRequest httpRequest = HttpRequest.newBuilder()
-                        .version(HttpClient.Version.HTTP_1_1)
-                        .uri(newURI)
-                        .build();
-
-                try {
-                    HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
-
-                    System.out.println("Got response from " + workerId + ": " + res);
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            }).start();
+            printActiveInstances();
+            waitForInstancesReady(workerId);
+            new Thread(() -> completeWorkerRegistration(workerId, instance)).start();
 
         } catch (AmazonServiceException ase) {
                 System.out.println("Caught Exception: " + ase.getMessage());
@@ -221,17 +230,18 @@ public class Autoscaler {
 
     public static void waitForInstancesReady(String... instanceId) {
         DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest().withInstanceIds(instanceId);
-
         DescribeInstanceStatusResult response;
         do {
             try {
-                Thread.sleep(4321);
+                System.out.println("Waiting for launched instance to be running");
+                Thread.sleep(8000);
             }
             catch (InterruptedException e) {
-                break;
+                break;  
             }
-
             response = ec2.describeInstanceStatus(request);
+            System.out.println("After waiting 8 seconds the status of the instance is: " + response.toString());
+
         } while (!response.getInstanceStatuses().stream().allMatch(status -> status.getInstanceState().getCode() == 16)); // 16 -> Running code
     }
 }

@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimator;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.FoxRabbitCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ImageCompressionCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.InsectWarsCE;
@@ -172,12 +173,9 @@ public class WorkersOracle {
     public static Worker findNextWorkerToHandleRequest(Worker prevWorker, Double complexity) 
         throws NoAvailableWorkerException {
 
-        if (workers.values().stream()
-            .filter(worker -> CPUFilter(worker.getId(), complexity))
-            .collect(Collectors.toList())
-            .size() == 0) {
+        if (applyLambdaFilter(complexity)) {
             throw new NoAvailableWorkerException(String.format(
-                "There is no Available Worker to handle this request\n"
+                "There is no Available Worker to handle this request. Using Lambdas \n"
                 + "Workers list:\n"
                 + workers.toString()
             ));
@@ -185,5 +183,14 @@ public class WorkersOracle {
         Worker worker = complexity.equals(0.0) ? roundRobin(prevWorker) : getTopWorker();
         LoadBalancerHandler.setPrevWorker(worker);
         return worker;
+    }
+
+    private static boolean applyLambdaFilter(Double complexity) {
+        return workers.values().stream()
+            .filter(worker -> CPUFilter(worker.getId(), complexity))
+            .collect(Collectors.toList())
+            .size() == 0
+            ||
+            complexity < ComplexityEstimator.MIN_COMPLEXITY_FOR_LAMBDA_INVOCATION;
     }
 }

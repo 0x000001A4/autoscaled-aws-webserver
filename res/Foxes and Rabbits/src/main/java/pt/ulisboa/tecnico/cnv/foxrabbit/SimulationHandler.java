@@ -12,18 +12,9 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class SimulationHandler implements HttpHandler, RequestHandler<Map<String, String>, String> {
 
+
     public String instrumentThis(int world, int n_scenario, int n_generations) {
-        Ecosystem ecosystem = new Ecosystem(world, n_scenario);
-        int generation = ecosystem.runSimulation(n_generations);
-
-        String response = "";
-        response += "<p>Simulation finish at generation: " + generation + "</p>";
-        response += "<p>Number of rocks: " + ecosystem.countType(Type.ROCK) + "</p>";
-        response += "<p>Number of rabbits: " + ecosystem.countType(Type.RABBIT) + "</p>";
-        response += "<p>Number of foxes: " + ecosystem.countType(Type.FOX) + "</p>";
-        response += ecosystem.getCurrentWorldHtmlTable();
-
-        return response;
+        return handleRequest(world, n_scenario, n_generations);
     }
 
     @Override

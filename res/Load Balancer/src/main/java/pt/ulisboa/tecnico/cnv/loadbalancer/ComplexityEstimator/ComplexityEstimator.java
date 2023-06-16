@@ -10,6 +10,8 @@ import pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions.InvalidArgumentException;
 
 public class ComplexityEstimator {
 
+    public static final Double MIN_COMPLEXITY_FOR_LAMBDA_INVOCATION = 10.0;
+
     public static Map<String,String> getReqFeatures(URI requestURI) {
         String query = requestURI.getQuery();
         Map<String, String> features = new HashMap<>();
@@ -70,6 +72,7 @@ public class ComplexityEstimator {
                         break;
                     case "data":
                         features.put("image-size", String.valueOf(value.length()));
+                        features.put("image", value);
                         break;
                     default:
                         break;

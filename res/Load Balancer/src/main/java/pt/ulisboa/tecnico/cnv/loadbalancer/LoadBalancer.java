@@ -51,11 +51,7 @@ public class LoadBalancer {
         System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
         AwsLambdaClient.init();
-        DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
-        .withCredentials(new EnvironmentVariableCredentialsProvider())
-        .withRegion(AWS_REGION)
-        .build()
-        );
+        DynamoClient.init();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();

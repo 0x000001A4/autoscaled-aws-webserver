@@ -1,7 +1,6 @@
 package pt.ulisboa.tecnico.cnv.webserver;
 
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -12,14 +11,19 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.sun.net.httpserver.HttpServer;
 
 import pt.ulisboa.tecnico.cnv.foxrabbit.SimulationHandler;
 import pt.ulisboa.tecnico.cnv.compression.CompressImageHandlerImpl;
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
+import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient.ServerStatus;
 import pt.ulisboa.tecnico.cnv.insectwar.WarSimulationHandler;
 
 
@@ -29,6 +33,7 @@ public class WebServer {
     private static WebServerStatus status = WebServerStatus.STATUS_OFF;
     private static String instanceId;
     private static String autoscalerPrivateIpAddress;
+    private static boolean settingup = true;
 
     public static ExecutorService getThreadPool() {
         return threadPool;
@@ -36,6 +41,14 @@ public class WebServer {
 
     public static WebServerStatus getStatus() {
         return status;
+    }
+
+    public static void setInstanceId(String id) {
+        instanceId = id;
+    }
+
+    public static void setASPrivateIPAddress(String ip) {
+        autoscalerPrivateIpAddress = ip;
     }
 
     public static void main(String[] args) throws Exception {
@@ -59,13 +72,14 @@ public class WebServer {
             }
 
             // parse request
-            String query = he.getRequestURI().getQuery();
+            URI reqURI = he.getRequestURI();
+            System.out.println("Got Request: " + reqURI);
+            Map<String, String> reqArgs = getReqFeatures(reqURI);
+            String response = "Got register request with query '" + reqURI.getQuery() + "'!";
+            System.out.println("Got Request args: " + reqArgs.toString());
 
-            instanceId = query.substring("id=".length());
-
-            System.out.println("Got register query " + query + ", instanceId = " + instanceId);
-
-            String response = "Got register request with query '" + query + "'!";
+            setInstanceId(reqArgs.get("id"));
+            setASPrivateIPAddress(he.getRemoteAddress().getHostName());
 
             he.sendResponseHeaders(200, response.length());
             OutputStream os = he.getResponseBody();
@@ -94,14 +108,13 @@ public class WebServer {
 
             os.close();
         });
-        
+
 
         Thread cpuTrackerThread = new Thread(() -> trackAndReportWorkerCPU());
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
             status = WebServerStatus.STATUS_OFF;
-            DynamoClient.updateStatus(DynamoClient.ServerStatus.STATUS_OFF);
             server.stop(0);
             threadPool.shutdown();
             cpuTrackerThread.interrupt();
@@ -120,8 +133,8 @@ public class WebServer {
     private static void trackAndReportWorkerCPU() {
         while (status.equals(WebServerStatus.STATUS_ON) && !Thread.currentThread().isInterrupted()) {
             try {
-                ProcessBuilder processBuilder = new ProcessBuilder("/home/ricky420/school/cnv/cnv/scripts/cputracker.sh");
-                Process process = processBuilder.start();
+                ProcessBuilder processBuilder = new ProcessBuilder("/home/ec2-user/cputracker.sh");
+                Process process = processBuilder.start(); /* Takes 10 seconds */
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
                 String line;
@@ -129,18 +142,19 @@ public class WebServer {
                     System.out.println("CPU Usage: " + line);
                 }
 
-            
-            // Build and Forward request
-            URI newURI = new URI("http://" + autoscalerPrivateIpAddress + ":" + 8000 + "/cputracker" +
-                String.format("?instanceId=%s&avgcpu=%s", instanceId, line)
-            );
+                
+                // Build and Forward request
+                URI newURI = new URI("http://" + autoscalerPrivateIpAddress + ":" + 8000 + "/cputracker" +
+                    String.format("?instanceId=%s&avgcpu=%s", instanceId, line)
+                );
+                System.out.println("Sending new request with uri: "+ newURI.toString());
                 HttpRequest httpRequest = HttpRequest.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .uri(newURI)
                     .build();
 
-                HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
-                Thread.sleep(2000);
+                
+                if (!WebServer.settingup) HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
@@ -153,5 +167,46 @@ public class WebServer {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static void start_dynamo_thread(String[] args, ExecutorService threadPool) {
+        boolean noDynamo = false;
+        for (String arg : args) {
+            if (arg.toLowerCase().contains("nodynamo")) {
+                noDynamo = true;
+                break;
+            }
+        }
+        if (!noDynamo) {
+            DynamoClient.init();
+            Runnable updateDBTask = DynamoClient::updateDBWithInstrumentationMetrics;
+
+            threadPool.execute(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                    if (status.equals(WebServerStatus.STATUS_ON)) {
+                        updateDBTask.run();
+                    }
+                    else Thread.currentThread().interrupt();
+                    try {
+                        TimeUnit.SECONDS.sleep(30);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+        }
+        WebServer.settingup = false;
+    }
+
+
+    private static Map<String,String> getReqFeatures(URI requestURI) {
+        String query = requestURI.getQuery();
+        Map<String, String> features = new HashMap<>();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            features.put(pair.substring(0, idx), pair.substring(idx + 1));
+        }
+        return features;
     }
 }

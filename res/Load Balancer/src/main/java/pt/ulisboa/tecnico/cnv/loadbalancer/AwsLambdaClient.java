@@ -24,8 +24,8 @@ public class AwsLambdaClient {
     }
 
     public static String getImageCompressionJson(Map<String, String> args) {
-        return String.format("{ \"image-size\": %s, \"target-format\": %s, \"compression-factor\": %s }",
-            args.get("image-size"), args.get("target-format"), args.get("compression-factor")
+        return String.format("{ \"image\": %s, \"target-format\": %s, \"compression-factor\": %s }",
+            args.get("image"), args.get("target-format"), args.get("compression-factor")
         );
     }
 

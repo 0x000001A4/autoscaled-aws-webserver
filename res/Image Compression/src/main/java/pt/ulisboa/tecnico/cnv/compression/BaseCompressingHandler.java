@@ -22,7 +22,7 @@ public abstract class BaseCompressingHandler implements HttpHandler, RequestHand
 
     abstract byte[] process(BufferedImage bi, String targetFormat, float compressionQuality) throws IOException;
 
-    private String instrumentThis(byte[] decoded, String format, float compressionFactor) {
+    private String handleRequest(byte[] decoded, String format, float compressionFactor) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(decoded);
             BufferedImage bi = ImageIO.read(bais);
@@ -32,6 +32,10 @@ public abstract class BaseCompressingHandler implements HttpHandler, RequestHand
         } catch (IOException e) {
             return e.toString();
         }
+    }
+
+    private String instrumentThis(byte[] decoded, String format, float compressionFactor) {
+        return handleRequest(decoded, format, compressionFactor);
     }
 
     @Override
@@ -62,6 +66,6 @@ public abstract class BaseCompressingHandler implements HttpHandler, RequestHand
 
     @Override
     public String handleRequest(Map<String, String> event, Context context) {
-        return instrumentThis(Base64.getDecoder().decode(event.get("image-size")), event.get("target-format"), Float.parseFloat(event.get("compression-factor")));
+        return handleRequest(Base64.getDecoder().decode(event.get("image")), event.get("target-format"), Float.parseFloat(event.get("compression-factor")));
     }
 }

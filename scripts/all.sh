@@ -91,6 +91,7 @@ wait $(jobs -rp)
 
 ## Send config file to AWS instance.
 scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${DIR}/awsconfig.sh" ec2-user@$(cat instance.dns):
+scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${DIR}/cputracker.sh" ec2-user@$(cat instance.dns):
 
 ## Send web server jar to AWS instance.
 scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${WEBSERVER_DIR}/${WEBSERVER_JAR}" ec2-user@$(cat instance.dns):

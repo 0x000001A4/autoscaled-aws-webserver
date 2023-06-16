@@ -39,15 +39,13 @@ public class DynamoClient {
     private static String AWS_REGION = System.getenv("AWS_DEFAULT_REGION");
     private static AmazonDynamoDB dynamoDB;
     public static enum ServerStatus {STATUS_ON, STATUS_OFF};
-    private static ServerStatus status = ServerStatus.STATUS_OFF;
 
-    public static void init(AmazonDynamoDB _dynamoDB) {
-        dynamoDB = _dynamoDB;
-        status = ServerStatus.STATUS_ON;
-    }
 
-    public static void updateStatus(ServerStatus newStatus) {
-        status = newStatus;
+    public static void init() {
+        dynamoDB = AmazonDynamoDBClientBuilder.standard()
+                .withCredentials(new EnvironmentVariableCredentialsProvider())
+                .withRegion(AWS_REGION)
+                .build();
     }
 
     public static void initServiceTables(List<String> serviceNames) {
@@ -170,40 +168,6 @@ public class DynamoClient {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    public static void start_dynamo_thread(String[] args, ExecutorService threadPool) {
-        boolean noDynamo = false;
-        for (String arg : args) {
-            if (arg.toLowerCase().contains("nodynamo")) {
-                noDynamo = true;
-                break;
-            }
-        }
-
-        if (!noDynamo) {
-            DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new EnvironmentVariableCredentialsProvider())
-                .withRegion(AWS_REGION)
-                .build()
-            );
-
-            Runnable updateDBTask = DynamoClient::updateDBWithInstrumentationMetrics;
-
-            threadPool.execute(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    if (status.equals(ServerStatus.STATUS_ON)) {
-                        updateDBTask.run();
-                    }
-                    else Thread.currentThread().interrupt();
-                    try {
-                        TimeUnit.MINUTES.sleep(1);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            });
         }
     }
 }
