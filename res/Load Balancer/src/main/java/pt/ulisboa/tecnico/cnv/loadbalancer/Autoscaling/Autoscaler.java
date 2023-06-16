@@ -8,11 +8,11 @@ import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.InstanceStateChange;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
+import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.Reservation;
-
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +25,13 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse.BodyHandlers;
 
 import pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer;
 import pt.ulisboa.tecnico.cnv.loadbalancer.WorkersOracle;
@@ -136,9 +143,45 @@ public class Autoscaler {
 
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
-        
+
             String workerId = instance.getInstanceId();
-            WorkersOracle.addWorker(new Worker(workerId, instance));
+
+            new Thread(() -> {
+                printActiveInstances();
+                waitForInstancesReady(workerId);
+                Worker worker = new Worker(workerId, instance);
+                WorkersOracle.addWorker(worker);
+                printActiveInstances();
+
+                String query = "?id=" + workerId;
+                String url = String.format("http://" + worker.getEC2Instance().getPrivateIpAddress() + ":" + 8000 + "/register%s",
+                        query
+                );
+
+                URI newURI;
+                try {
+                    newURI = new URI(url);
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                    return;
+                }
+                System.out.println("Sending instance-id to worker: " + url);
+
+                // Build and Forward request
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .uri(newURI)
+                        .build();
+
+                try {
+                    HttpResponse<byte[]> res = HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+
+                    System.out.println("Got response from " + workerId + ": " + res);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            }).start();
 
         } catch (AmazonServiceException ase) {
                 System.out.println("Caught Exception: " + ase.getMessage());
@@ -176,25 +219,19 @@ public class Autoscaler {
     }
 
 
-    public static List<Instance> fetchEC2instances() {
-        List<Instance> activeInstances = new ArrayList<Instance>();
-        DescribeInstancesRequest request = new DescribeInstancesRequest();
-        DescribeInstancesResult response = ec2.describeInstances(request);
-        boolean done = false;
+    public static void waitForInstancesReady(String... instanceId) {
+        DescribeInstanceStatusRequest request = new DescribeInstanceStatusRequest().withInstanceIds(instanceId);
 
-        while (!done) {
-            for (Reservation reservation: response.getReservations()) {
-                for (Instance instance: reservation.getInstances()) {
-                    if (InstanceStateName.Running.toString().equalsIgnoreCase(instance.getState().getName())) {
-                        activeInstances.add(instance);
-                    }
-                }
+        DescribeInstanceStatusResult response;
+        do {
+            try {
+                Thread.sleep(4321);
             }
-            request.setNextToken(response.getNextToken());
-            if (response.getNextToken() == null) {
-                done = true;
+            catch (InterruptedException e) {
+                break;
             }
-        }
-        return activeInstances;
+
+            response = ec2.describeInstanceStatus(request);
+        } while (!response.getInstanceStatuses().stream().allMatch(status -> status.getInstanceState().getCode() == 16)); // 16 -> Running code
     }
 }

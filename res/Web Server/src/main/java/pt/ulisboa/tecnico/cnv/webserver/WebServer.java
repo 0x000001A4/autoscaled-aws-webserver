@@ -48,6 +48,31 @@ public class WebServer {
         server.createContext("/simulate", foxesAndRabbitsHandler);
         server.createContext("/compressimage", compressImageHandler);
         server.createContext("/insectwar", warSimulationHandler);
+        server.createContext("/register", he -> {
+            he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+            if (he.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                he.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+                he.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+                he.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            // parse request
+            String query = he.getRequestURI().getQuery();
+
+            instanceId = query.substring("id=".length());
+
+            System.out.println("Got register query " + query + ", instanceId = " + instanceId);
+
+            String response = "Got register request with query '" + query + "'!";
+
+            he.sendResponseHeaders(200, response.length());
+            OutputStream os = he.getResponseBody();
+            os.write(response.getBytes());
+
+            os.close();
+        });
         server.createContext("/test", he -> {
             he.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
