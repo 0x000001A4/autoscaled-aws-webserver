@@ -69,6 +69,7 @@ public class WebServer {
 
             os.close();
         });
+        
 
         Thread cpuTrackerThread = new Thread(() -> trackAndReportWorkerCPU());
 
