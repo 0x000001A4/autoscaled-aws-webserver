@@ -35,4 +35,4 @@ done
 
 # Sending a query!
 echo "Sending a query!"
-curl "${url}/test?testing=after-reboot"
+curl "${url}/test?testing=after-reboot&instanceId=$(cat instance.id)"

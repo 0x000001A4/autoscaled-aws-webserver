@@ -106,7 +106,6 @@ cmd="$cmd; $(setupService "worker" "/usr/bin/java -cp \"${WEBSERVER_JAR}\" -java
 ## Run commands in AWS instance.
 ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" ec2-user@$(cat instance.dns) ${cmd}
 
-
 # Step 4: test VM instance.
 ${DIR}/test-vm.sh
 

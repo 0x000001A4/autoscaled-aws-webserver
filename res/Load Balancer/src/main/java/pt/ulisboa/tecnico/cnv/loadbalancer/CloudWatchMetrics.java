@@ -37,6 +37,7 @@ public class CloudWatchMetrics {
     public static double fetchAvgCPUUtilization(String instanceId) {
         return fetchAvgCPUUtilization(AmazonCloudWatchClientBuilder.defaultClient(), instanceId);
     }
+    
     public static double fetchAvgCPUUtilization(AmazonCloudWatch cw, String instanceId) {
 
         GetMetricStatisticsRequest request = new GetMetricStatisticsRequest()

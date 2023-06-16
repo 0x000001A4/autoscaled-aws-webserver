@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.cnv.loadbalancer;
+package pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions;
 
 public class NoAvailableWorkerException extends Exception {
     

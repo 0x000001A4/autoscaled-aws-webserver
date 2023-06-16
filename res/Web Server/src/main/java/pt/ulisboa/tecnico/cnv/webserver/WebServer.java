@@ -1,7 +1,17 @@
 package pt.ulisboa.tecnico.cnv.webserver;
 
+
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +27,8 @@ public class WebServer {
     private static ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
     public static enum WebServerStatus {STATUS_ON, STATUS_OFF};
     private static WebServerStatus status = WebServerStatus.STATUS_OFF;
+    private static String instanceId;
+    private static String autoscalerPrivateIpAddress;
 
     public static ExecutorService getThreadPool() {
         return threadPool;
@@ -58,6 +70,7 @@ public class WebServer {
             os.close();
         });
 
+        Thread cpuTrackerThread = new Thread(() -> trackAndReportWorkerCPU());
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Stopping webserver...");
@@ -65,6 +78,7 @@ public class WebServer {
             DynamoClient.updateStatus(DynamoClient.ServerStatus.STATUS_OFF);
             server.stop(0);
             threadPool.shutdown();
+            cpuTrackerThread.interrupt();
             try {
                 threadPool.awaitTermination(30, TimeUnit.MINUTES);
             } catch (Exception e) {
@@ -74,5 +88,44 @@ public class WebServer {
 
         status = WebServerStatus.STATUS_ON;
         threadPool.execute(server::start);
+        threadPool.execute(cpuTrackerThread);
+    }
+
+    private static void trackAndReportWorkerCPU() {
+        while (status.equals(WebServerStatus.STATUS_ON) && !Thread.currentThread().isInterrupted()) {
+            try {
+                ProcessBuilder processBuilder = new ProcessBuilder("/home/ricky420/school/cnv/cnv/scripts/cputracker.sh");
+                Process process = processBuilder.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("CPU Usage: " + line);
+                }
+
+            
+            // Build and Forward request
+            URI newURI = new URI("http://" + autoscalerPrivateIpAddress + ":" + 8000 + "/cputracker" +
+                String.format("?instanceId=%s&avgcpu=%s", instanceId, line)
+            );
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .uri(newURI)
+                    .build();
+
+                HttpClient.newHttpClient().send(httpRequest, BodyHandlers.ofByteArray());
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                break;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

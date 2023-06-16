@@ -6,7 +6,10 @@ import java.io.InputStream;
 import com.sun.net.httpserver.HttpHandler;
 
 import javassist.bytecode.ByteArray;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Autoscaling.Autoscaler;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ComplexityEstimator;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions.InvalidArgumentException;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions.NoAvailableWorkerException;
 
 import com.sun.net.httpserver.HttpExchange;
 import java.net.URI;

@@ -19,6 +19,7 @@ import java.util.Map.Entry;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.FoxRabbitCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.ImageCompressionCE;
 import pt.ulisboa.tecnico.cnv.loadbalancer.ComplexityEstimator.InsectWarsCE;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions.NoAvailableWorkerException;
 import pt.ulisboa.tecnico.cnv.webserver.Worker;
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
 
@@ -32,6 +33,7 @@ public class WorkersOracle {
     public static Map<String, Worker> getWorkers() {
         return workers;
     }
+    
 
     public static void addWorker(Worker newWorker) {
         synchronized (LoadBalancer.queueLock) {
@@ -78,6 +80,10 @@ public class WorkersOracle {
         Double ratio = ninsts <= 0 ? 2 : nblocks / ninsts;
 
         return ratio * ninsts + (1 - ratio) * nblocks + 0.0 * nmethods;
+    }
+
+    public static void updateWorkerAvgCPU(String workerId, Double avgCPU) {
+        workers.get(workerId).setAvgCPUUtilization(avgCPU);
     }
 
     public static void updateLBWithInstrumentationMetrics() {

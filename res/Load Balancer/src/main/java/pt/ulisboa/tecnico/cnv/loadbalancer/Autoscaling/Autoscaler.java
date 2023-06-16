@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.cnv.loadbalancer;
+package pt.ulisboa.tecnico.cnv.loadbalancer.Autoscaling;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
@@ -13,17 +13,28 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.Reservation;
 
+
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+import com.sun.net.httpserver.HttpServer;
+
 import java.util.ArrayList;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer;
+import pt.ulisboa.tecnico.cnv.loadbalancer.WorkersOracle;
+import pt.ulisboa.tecnico.cnv.loadbalancer.LoadBalancer.LoadBalancerStatus;
 import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class Autoscaler {
 
     private static AmazonEC2 ec2;
+    private static Thread autoscalingThread = null;
     private static String AMI_ID = GET_AMI_ID();
     private static String KEY_NAME = System.getenv("AWS_KEYPAIR_NAME");
     private static String SEC_GROUP_ID = System.getenv("AWS_SG_ID");
@@ -41,28 +52,28 @@ public class Autoscaler {
         }
     }
 
-    public static void init(AmazonEC2 ec2Client) {
+    public static void init(AmazonEC2 ec2Client, HttpServer server) {
         ec2 = ec2Client;
         launchEC2Instance();
-        printActiveInstances();
+        server.createContext("/cputracker", new AutoscalerServiceImpl());
+        autoscalingThread = new Thread(() -> {
+            while (LoadBalancer.getStatus().equals(LoadBalancerStatus.STATUS_ON) &&
+                    !Thread.currentThread().isInterrupted()) {
+                try {
+                    updateActiveWorkers();
+                    printActiveInstances();
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+
+                }  catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         autoscalingThread.start();
     }
-
-    private static Thread autoscalingThread = new Thread(() -> {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                /* Each 60 seconds update the avgCPUUtilization of each worker */
-                CloudWatchMetrics.updateWorkersAvgCPUUtilization();
-                updateActiveWorkers();
-                printActiveInstances();
-                Thread.sleep(30000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-    });
-
+    
     synchronized public static void updateActiveWorkers() {
         Double avgCPUUtilization = WorkersOracle.computeAvgWorkersAvgCPUUtilization();
         if (avgCPUUtilization > MAX_AVG_CPU_UTILIZATION) {

@@ -13,6 +13,7 @@ import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 
 import pt.ulisboa.tecnico.cnv.dynamoclient.DynamoClient;
+import pt.ulisboa.tecnico.cnv.loadbalancer.Autoscaling.Autoscaler;
 
 
 public class LoadBalancer {
@@ -50,11 +51,10 @@ public class LoadBalancer {
         System.out.println("You have " + ec2.describeInstances().getReservations().size() + " Amazon EC2 instance(s) running.");
 
         AwsLambdaClient.init();
-        Autoscaler.init(ec2);
         DynamoClient.init(AmazonDynamoDBClientBuilder.standard()
-            .withCredentials(new EnvironmentVariableCredentialsProvider())
-            .withRegion(AWS_REGION)
-            .build()
+        .withCredentials(new EnvironmentVariableCredentialsProvider())
+        .withRegion(AWS_REGION)
+        .build()
         );
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
@@ -64,6 +64,7 @@ public class LoadBalancer {
         server.createContext("/simulate", loadBalancerHandler);
         server.createContext("/compressimage", loadBalancerHandler);
         server.createContext("/insectwar", loadBalancerHandler);
+        Autoscaler.init(ec2, server);
 
         status = LoadBalancerStatus.STATUS_ON;
         WorkersOracle.init(threadPool);
