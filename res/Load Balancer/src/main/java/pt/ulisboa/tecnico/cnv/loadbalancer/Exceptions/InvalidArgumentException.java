@@ -3,6 +3,10 @@ package pt.ulisboa.tecnico.cnv.loadbalancer.Exceptions;
 public class InvalidArgumentException extends Exception {
  
     private String message;
+
+    public InvalidArgumentException() {
+        
+    }
     
     public InvalidArgumentException(String message) {
         this.message = message;

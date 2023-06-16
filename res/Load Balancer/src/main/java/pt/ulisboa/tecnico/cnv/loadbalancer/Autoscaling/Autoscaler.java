@@ -69,9 +69,9 @@ public class Autoscaler {
                     !Thread.currentThread().isInterrupted()) {
                 try {
                     updateActiveWorkers();
-                    cnt = (cnt + 1) % 10;
+                    cnt = (cnt + 1) % 6;
                     if (cnt == 0) printActiveInstances();
-                    Thread.sleep(2000);
+                    Thread.sleep(10000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
 
@@ -88,7 +88,7 @@ public class Autoscaler {
         if (avgCPUUtilization > MAX_AVG_CPU_UTILIZATION) {
             launchEC2Instance();
 
-        } else if (WorkersOracle.getWorkers().size() > 0 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
+        } else if (WorkersOracle.getWorkers().size() > 1 && avgCPUUtilization < MIN_AVG_CPU_UTILIZATION) {
             double maxAvgCpuUtilization = 0;
             String id = null;
             for (Worker worker: WorkersOracle.getWorkers().values()) {

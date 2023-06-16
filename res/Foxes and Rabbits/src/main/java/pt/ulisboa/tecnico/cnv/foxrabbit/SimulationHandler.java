@@ -64,7 +64,7 @@ public class SimulationHandler implements HttpHandler, RequestHandler<Map<String
         return result;
     }
 
-    private String handleRequest(int world, int scenario, int generations) {
+    public String handleRequest(int world, int scenario, int generations) {
         Ecosystem ecosystem = new Ecosystem(world, scenario);
         int generation = ecosystem.runSimulation(generations);
 

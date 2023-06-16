@@ -70,10 +70,9 @@ public class ComplexityEstimator {
                     case "compressionFactor":
                         features.put("compression-factor", value);
                         break;
-                    case "data":
+                    case "image":
                         features.put("image-size", String.valueOf(value.length()));
                         features.put("image", value);
-                        break;
                     default:
                         break;
                 }
@@ -100,7 +99,7 @@ public class ComplexityEstimator {
         }
         try {
             Double cf = Double.parseDouble(features.get("compression-factor"));
-            if (features.size() == 4 && features.containsKey("image-size") 
+            if (features.size() == 3 && features.containsKey("image-size") 
                 && features.containsKey("image") && cf >= 0 && cf <= 1)
                 return features;
         } catch (Exception e) {}
@@ -113,6 +112,8 @@ public class ComplexityEstimator {
         try {
             switch (requestURI.getPath()) {
                 case "/compressimage": {
+                    System.out.println("@URI: " + requestURI.toString());
+                    System.out.println("@Body: " + body);
                     Map<String, String> requestFeatures = getImgCompressionFeatures(body);
                     System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
