@@ -100,6 +100,9 @@ scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC
 scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${WEBSERVER_DIR}/${WEBSERVER_JAR}" ec2-user@$(cat instance.dns):
 scp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -i "${AWS_EC2_SSH_KEYPAIR_PATH}" "${JAVASSIST_DIR}/${JAVASSIST_JAR}" ec2-user@$(cat instance.dns):
 
+## Set correct permissions on files
+cmd="$cmd; chmod 700 awsconfig.sh cputracker.sh"
+
 ## Install java.
 cmd="$cmd; sudo yum update -y; sudo yum install java-11-amazon-corretto.x86_64 -y"
 cmd="$cmd; java -version"
@@ -118,7 +121,7 @@ aws ec2 create-image \
     --instance-id "$(cat instance.id)" \
     --name "${AWS_AMI_NAME}" \
     --query "ImageId" \
-    --output text > "${DIR}/image.id"
+    --output text | tr -d '\r\n' > "${DIR}/image.id"
 echo "New VM image with id $(cat image.id)."
 
 
@@ -141,6 +144,10 @@ cmd="$cmd; sudo rm /etc/systemd/system/worker.service"
 ## Remove web server jar from AWS instance.
 cmd="$cmd; rm \"/home/ec2-user/${WEBSERVER_JAR}\""
 cmd="$cmd; rm \"/home/ec2-user/${JAVASSIST_JAR}\""
+
+## Remove other no longer needed files
+cmd="$cmd; rm cputracker.sh"
+cmd="$cmd; rm -r output"
 
 
 # Step 8: Upload load balancer and autoscaler code.

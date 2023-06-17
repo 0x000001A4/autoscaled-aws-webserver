@@ -65,14 +65,11 @@ public class ComplexityEstimator {
                 String value = kvPair[1].trim();
                 switch (key) {
                     case "targetFormat":
-                        //features.put("target-format", value);
+                        features.put("target-format", value);
                         break;
                     case "compressionFactor":
                         features.put("compression-factor", value);
                         break;
-                    case "image":
-                        features.put("image-size", String.valueOf(value.length()));
-                        features.put("image", value);
                     default:
                         break;
                 }
@@ -97,12 +94,16 @@ public class ComplexityEstimator {
                 }
             }
         }
+
         try {
             Double cf = Double.parseDouble(features.get("compression-factor"));
-            if (features.size() == 3 && features.containsKey("image-size") 
+            if (features.size() == 4
+                && features.containsKey("target-format")
+                && features.containsKey("image-size") 
                 && features.containsKey("image") && cf >= 0 && cf <= 1)
                 return features;
         } catch (Exception e) {}
+
         throw new InvalidArgumentException(String.format(
             "InvalidArgumentException in image compression. Features: %s", features
         ));
@@ -113,7 +114,7 @@ public class ComplexityEstimator {
             switch (requestURI.getPath()) {
                 case "/compressimage": {
                     System.out.println("@URI: " + requestURI.toString());
-                    System.out.println("@Body: " + body);
+                    System.out.println("@Body: " + "...");
                     Map<String, String> requestFeatures = getImgCompressionFeatures(body);
                     System.out.println(requestFeatures);
                     return new SimpleEntry<Double, Map<String,String>>(
@@ -139,11 +140,13 @@ public class ComplexityEstimator {
                 }
                 default:
                     System.out.println("Error: No service with this path");
+
                     return null;
             }
         } catch (Exception e) {
             System.out.println("Failed to estimate request complexity");
             e.printStackTrace();
+
             return null;
         }
     }

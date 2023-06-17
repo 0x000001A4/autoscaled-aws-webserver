@@ -15,13 +15,11 @@ import com.amazonaws.services.ec2.model.InstanceStateName;
 import com.amazonaws.services.ec2.model.Reservation;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import com.sun.net.httpserver.HttpServer;
 
 import java.util.ArrayList;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,6 +38,7 @@ import pt.ulisboa.tecnico.cnv.webserver.Worker;
 
 public class Autoscaler {
 
+    private static List<String> allInstances = new ArrayList<>(); 
     private static AmazonEC2 ec2;
     private static Thread autoscalingThread = null;
     private static String AMI_ID = GET_AMI_ID();
@@ -108,7 +107,7 @@ public class Autoscaler {
 
     public static void terminateAllInstances() {
         List<Thread> threads = new ArrayList<>();
-        for (String workerId: WorkersOracle.getWorkers().keySet()) {
+        for (String workerId: allInstances) {
             Thread t = new Thread(() -> terminateEC2instance(workerId));
             threads.add(t);
             t.start();
@@ -177,8 +176,13 @@ public class Autoscaler {
                     WorkersOracle.addWorker(worker);
                     break;
                 }
-                Thread.sleep(5000);
             } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -200,6 +204,7 @@ public class Autoscaler {
             RunInstancesResult runInstancesResult = ec2.runInstances(runInstancesRequest);
             Instance instance = runInstancesResult.getReservation().getInstances().get(0);
             String workerId = instance.getInstanceId();
+            allInstances.add(workerId);
 
             printActiveInstances();
             waitForInstancesReady(workerId);
@@ -223,13 +228,20 @@ public class Autoscaler {
                 TerminateInstancesResult res = ec2.terminateInstances(termInstanceReq);
                 List<InstanceStateChange> stateChanges = res.getTerminatingInstances();
                 for (InstanceStateChange stChange: stateChanges) {
-                    System.out.println("The ID of the {status: " + stChange.getCurrentState().getName() +
-                        "} instance is " + stChange.getInstanceId());
+                    System.out.println("The ID of the " + stChange.getCurrentState().getName() +
+                        " instance is " + stChange.getInstanceId());
                     if (stChange.getCurrentState().getName().equals(InstanceStateName.Terminated.toString())) {
                         terminated = true;
                     }
                 }
+                
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+            allInstances.remove(instanceId);
 
         } catch (AmazonServiceException ase) {
             WorkersOracle.addWorker(worker);

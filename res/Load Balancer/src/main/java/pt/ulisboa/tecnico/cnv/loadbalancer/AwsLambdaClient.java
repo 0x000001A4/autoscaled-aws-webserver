@@ -58,15 +58,23 @@ public class AwsLambdaClient {
 	public static byte[] invokeLambda(String lambdaName, Map<String, String> reqArgs) {
        try {
            String json = getJSONFromArgs(lambdaName, reqArgs);
+           System.out.println("Invoking lambda with json: " + "...");
            ByteBuffer payload = ByteBuffer.wrap(json.getBytes(StandardCharsets.UTF_8)) ;
 
-           InvokeRequest request = new InvokeRequest()
-                                    .withFunctionName(lambdaName)
-                                    .withPayload(payload);
+           try {
+               InvokeRequest request = new InvokeRequest()
+                                        .withFunctionName(lambdaName)
+                                        .withPayload(payload);
 
-           return awsLambdaClient.invoke(request)
-                    .getPayload()
-                    .array();
+               return awsLambdaClient.invoke(request)
+                        .getPayload()
+                        .array();
+           } catch (Exception e) {
+               e.printStackTrace();
+               System.out.println("Error invoking lambda :(");
+
+               return new byte[0];
+           }
 
        } catch(AWSLambdaException e) {
            System.err.println(e.getMessage());

@@ -35,71 +35,33 @@
         <module>Load Balancer</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>packaging-profile</id>
-            <activation>
-                <property>
-                    <!-- THIS CHECKING OF THE PACKAGING PROPERTY ONLY WORKS WITH MAVEN 3.9.2+ !!! -->
-                    <!-- If you don't have maven 3.9.2+, it will use the antrun-plugin to disable assembly -->
-                    <name>packaging</name>
-                    <value>!pom</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <!-- Skip assembly if packaging is pom -->
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>3.1.0</version>
-                        <executions>
-                            <execution>
-                                <id>setup-variables</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <!-- Very important line, this exports property for others to use!!! -->
-                                    <exportAntProperties>true</exportAntProperties>
-                                    <target>
-                                        <!-- Simply setting the flag 'skipAssembly' to true does the trick :) -->
-                                        <condition property="assembly.skipAssembly" value="true" else="false">
-                                            <equals arg1="${project.packaging}" arg2="pom" />
-                                        </condition>
-                                    </target>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.6.0</version>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <archive>
-                                <manifest>
-                                    <mainClass>${exec.mainClass}</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>assemble-all</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+	<build>
+	    <plugins>
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-assembly-plugin</artifactId>
+	            <version>3.6.0</version>
+	            <configuration>
+	                <descriptorRefs>
+	                    <descriptorRef>jar-with-dependencies</descriptorRef>
+	                </descriptorRefs>
+	                <archive>
+	                    <manifest>
+	                        <mainClass>${exec.mainClass}</mainClass>
+	                    </manifest>
+	                </archive>
+	            </configuration>
+	            <executions>
+	                <execution>
+	                    <id>assemble-all</id>
+	                    <phase>package</phase>
+	                    <goals>
+	                        <goal>single</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
+	    </plugins>
+	</build>
 
 </project>

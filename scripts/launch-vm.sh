@@ -10,7 +10,7 @@ aws ec2 run-instances \
     --security-group-ids "${AWS_SG_ID}" \
     --monitoring Enabled=true \
     --query "Instances[0].InstanceId" \
-    --output text | tr -d '\r\n' > instance.id
+    --output text | tr -d '\r\n' > "${DIR}/instance.id"
 echo "New instance with id $(cat instance.id)."
 
 # Wait for instance to be running.
@@ -21,7 +21,7 @@ echo "New instance with id $(cat instance.id) is now running."
 aws ec2 describe-instances \
     --instance-id $(cat instance.id) \
     --query "Reservations[0].Instances[0].NetworkInterfaces[0].PrivateIpAddresses[0].Association.PublicDnsName" \
-    --output text | tr -d '\r\n' > instance.dns
+    --output text | tr -d '\r\n' > "${DIR}/instance.dns"
 echo "New instance with id $(cat instance.id) has address $(cat instance.dns)."
 
 # Wait for instance to have SSH ready.

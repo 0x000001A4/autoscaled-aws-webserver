@@ -69,6 +69,7 @@ public abstract class BaseCompressingHandler implements HttpHandler, RequestHand
         byte[] decoded = Base64.getDecoder().decode(event.get("image"));
         String tf = event.get("target-format");
         Float cf = Float.parseFloat(event.get("compression-factor"));
+
         return handleRequest(decoded, tf, cf);
     }
 }

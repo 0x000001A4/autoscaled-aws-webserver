@@ -50,6 +50,9 @@ public class LoadBalancer {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         ExecutorService threadPool = java.util.concurrent.Executors.newCachedThreadPool();
+        Runtime.getRuntime().addShutdownHook(
+            new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
+        );
         server.setExecutor(threadPool);
         LoadBalancerHandler loadBalancerHandler = new LoadBalancerHandler();
         server.createContext("/simulate", loadBalancerHandler);
@@ -61,9 +64,6 @@ public class LoadBalancer {
         WorkersOracle.init(threadPool);
         DynamoClient.initServiceTables(Arrays.asList(WorkersOracle.workerServiceNames));
 
-        Runtime.getRuntime().addShutdownHook(
-            new Thread(() -> cleanShutdown(server, threadPool, Autoscaler.getThread()))
-        );
         server.start();
     }
 }
