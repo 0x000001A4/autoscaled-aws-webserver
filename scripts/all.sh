@@ -6,6 +6,14 @@
 
 source config.sh
 
+echo "AWS_DEFAULT_REGION=us-east-1" > awsconfig.sh
+echo "AWS_SG_ID=sg-0e99c75e2e2f55e2a" >> awsconfig.sh
+echo "AWS_KEYPAIR_NAME=keypair" >> awsconfig.sh
+echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> awsconfig.sh
+echo "AWS_SECRET_KEY=${AWS_SECRET_ACCESS_KEY}" >> awsconfig.sh
+chmod +x awsconfig.sh
+
+
 # Paths
 ## Res folder
 RES_DIR="${DIR}/../res"
