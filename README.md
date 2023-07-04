@@ -1,2 +1,1 @@
-# cnv
-MEIC repository for Cloud Computing and Virtualization
+Work developed in MEIC Cloud Computing and Virtualization Subject
